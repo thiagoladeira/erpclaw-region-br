@@ -309,6 +309,14 @@ def import_nfe_entry(conn, args):
             conn, data['emitente_cnpj'], data['emitente_nome'], company_id
         )
 
+    # Read raw XML content for archival
+    xml_raw = None
+    if args.xml_path and os.path.isfile(args.xml_path):
+        with open(args.xml_path, 'r', encoding='utf-8') as f:
+            xml_raw = f.read()
+    elif args.xml_content:
+        xml_raw = args.xml_content
+
     # Create NF-e import record
     nfe_id = str(uuid4())
     conn.execute("""
@@ -320,7 +328,7 @@ def import_nfe_entry(conn, args):
             base_icms, valor_icms, base_icms_st, valor_icms_st,
             valor_ipi, valor_pis, valor_cofins,
             valor_frete, valor_seguro, valor_desconto, outras_despesas,
-            supplier_id, company_id, status
+            xml_raw, supplier_id, company_id, status
         ) VALUES (
             ?, ?, ?, ?, ?, ?,
             ?, ?, ?,
@@ -329,7 +337,7 @@ def import_nfe_entry(conn, args):
             ?, ?, ?, ?,
             ?, ?, ?,
             ?, ?, ?, ?,
-            ?, ?, 'imported'
+            ?, ?, ?, 'imported'
         )
     """, (
         nfe_id, chave, data['numero_nfe'], data['serie'], data['modelo'],
@@ -342,7 +350,7 @@ def import_nfe_entry(conn, args):
         data['valor_ipi'], data['valor_pis'], data['valor_cofins'],
         data['valor_frete'], data['valor_seguro'],
         data['valor_desconto'], data['outras_despesas'],
-        supplier_id, company_id,
+        xml_raw, supplier_id, company_id,
     ))
 
     # Save NF-e items
