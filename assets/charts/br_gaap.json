@@ -1,0 +1,2027 @@
+[
+  {
+    "account_number": "1",
+    "name": "ATIVO",
+    "parent_number": null,
+    "root_type": "asset",
+    "account_type": null,
+    "is_group": 1,
+    "balance_direction": "debit_normal"
+  },
+  {
+    "account_number": "1.1",
+    "name": "ATIVO CIRCULANTE",
+    "parent_number": "1",
+    "root_type": "asset",
+    "account_type": null,
+    "is_group": 1,
+    "balance_direction": "debit_normal"
+  },
+  {
+    "account_number": "1.1.1",
+    "name": "Caixa e Equivalentes de Caixa",
+    "parent_number": "1.1",
+    "root_type": "asset",
+    "account_type": null,
+    "is_group": 1,
+    "balance_direction": "debit_normal"
+  },
+  {
+    "account_number": "1.1.1.01",
+    "name": "Caixa",
+    "parent_number": "1.1.1",
+    "root_type": "asset",
+    "account_type": "cash",
+    "is_group": 0,
+    "balance_direction": "debit_normal"
+  },
+  {
+    "account_number": "1.1.1.02",
+    "name": "Bancos Conta Movimento",
+    "parent_number": "1.1.1",
+    "root_type": "asset",
+    "account_type": "bank",
+    "is_group": 0,
+    "balance_direction": "debit_normal"
+  },
+  {
+    "account_number": "1.1.1.03",
+    "name": "Aplicações Financeiras de Liquidez Imediata",
+    "parent_number": "1.1.1",
+    "root_type": "asset",
+    "account_type": "bank",
+    "is_group": 0,
+    "balance_direction": "debit_normal"
+  },
+  {
+    "account_number": "1.1.2",
+    "name": "Contas a Receber",
+    "parent_number": "1.1",
+    "root_type": "asset",
+    "account_type": null,
+    "is_group": 1,
+    "balance_direction": "debit_normal"
+  },
+  {
+    "account_number": "1.1.2.01",
+    "name": "Duplicatas a Receber - Clientes Nacionais",
+    "parent_number": "1.1.2",
+    "root_type": "asset",
+    "account_type": "receivable",
+    "is_group": 0,
+    "balance_direction": "debit_normal"
+  },
+  {
+    "account_number": "1.1.2.02",
+    "name": "Duplicatas a Receber - Clientes Exterior",
+    "parent_number": "1.1.2",
+    "root_type": "asset",
+    "account_type": "receivable",
+    "is_group": 0,
+    "balance_direction": "debit_normal"
+  },
+  {
+    "account_number": "1.1.2.03",
+    "name": "(-) PECLD (Perdas Estimadas Crédito Liquidação Duvidosa)",
+    "parent_number": "1.1.2",
+    "root_type": "asset",
+    "account_type": "receivable",
+    "is_group": 0,
+    "balance_direction": "credit_normal"
+  },
+  {
+    "account_number": "1.1.2.04",
+    "name": "Adiantamentos a Fornecedores",
+    "parent_number": "1.1.2",
+    "root_type": "asset",
+    "account_type": "receivable",
+    "is_group": 0,
+    "balance_direction": "debit_normal"
+  },
+  {
+    "account_number": "1.1.2.05",
+    "name": "Adiantamentos a Funcionários",
+    "parent_number": "1.1.2",
+    "root_type": "asset",
+    "account_type": "receivable",
+    "is_group": 0,
+    "balance_direction": "debit_normal"
+  },
+  {
+    "account_number": "1.1.3",
+    "name": "Estoques (Bloco K)",
+    "parent_number": "1.1",
+    "root_type": "asset",
+    "account_type": null,
+    "is_group": 1,
+    "balance_direction": "debit_normal"
+  },
+  {
+    "account_number": "1.1.3.01",
+    "name": "Matérias-Primas (Tipo 01 - MP)",
+    "parent_number": "1.1.3",
+    "root_type": "asset",
+    "account_type": "stock",
+    "is_group": 0,
+    "balance_direction": "debit_normal"
+  },
+  {
+    "account_number": "1.1.3.02",
+    "name": "Material de Embalagem (Tipo 02 - ME)",
+    "parent_number": "1.1.3",
+    "root_type": "asset",
+    "account_type": "stock",
+    "is_group": 0,
+    "balance_direction": "debit_normal"
+  },
+  {
+    "account_number": "1.1.3.03",
+    "name": "Produtos em Elaboração (Tipo 03 - PI)",
+    "parent_number": "1.1.3",
+    "root_type": "asset",
+    "account_type": "stock",
+    "is_group": 0,
+    "balance_direction": "debit_normal"
+  },
+  {
+    "account_number": "1.1.3.04",
+    "name": "Produtos Acabados (Tipo 04 - PA)",
+    "parent_number": "1.1.3",
+    "root_type": "asset",
+    "account_type": "stock",
+    "is_group": 0,
+    "balance_direction": "debit_normal"
+  },
+  {
+    "account_number": "1.1.3.05",
+    "name": "Subprodutos e Coprodutos (Tipo 05)",
+    "parent_number": "1.1.3",
+    "root_type": "asset",
+    "account_type": "stock",
+    "is_group": 0,
+    "balance_direction": "debit_normal"
+  },
+  {
+    "account_number": "1.1.3.06",
+    "name": "Mercadorias para Revenda",
+    "parent_number": "1.1.3",
+    "root_type": "asset",
+    "account_type": "stock",
+    "is_group": 0,
+    "balance_direction": "debit_normal"
+  },
+  {
+    "account_number": "1.1.3.07",
+    "name": "Material de Uso e Consumo (Tipo 10)",
+    "parent_number": "1.1.3",
+    "root_type": "asset",
+    "account_type": "stock",
+    "is_group": 0,
+    "balance_direction": "debit_normal"
+  },
+  {
+    "account_number": "1.1.4",
+    "name": "Impostos a Recuperar",
+    "parent_number": "1.1",
+    "root_type": "asset",
+    "account_type": null,
+    "is_group": 1,
+    "balance_direction": "debit_normal"
+  },
+  {
+    "account_number": "1.1.4.01",
+    "name": "ICMS a Recuperar",
+    "parent_number": "1.1.4",
+    "root_type": "asset",
+    "account_type": "tax",
+    "is_group": 0,
+    "balance_direction": "debit_normal"
+  },
+  {
+    "account_number": "1.1.4.02",
+    "name": "IPI a Recuperar",
+    "parent_number": "1.1.4",
+    "root_type": "asset",
+    "account_type": "tax",
+    "is_group": 0,
+    "balance_direction": "debit_normal"
+  },
+  {
+    "account_number": "1.1.4.03",
+    "name": "PIS a Recuperar",
+    "parent_number": "1.1.4",
+    "root_type": "asset",
+    "account_type": "tax",
+    "is_group": 0,
+    "balance_direction": "debit_normal"
+  },
+  {
+    "account_number": "1.1.4.04",
+    "name": "COFINS a Recuperar",
+    "parent_number": "1.1.4",
+    "root_type": "asset",
+    "account_type": "tax",
+    "is_group": 0,
+    "balance_direction": "debit_normal"
+  },
+  {
+    "account_number": "1.1.4.05",
+    "name": "IRPJ a Recuperar",
+    "parent_number": "1.1.4",
+    "root_type": "asset",
+    "account_type": "tax",
+    "is_group": 0,
+    "balance_direction": "debit_normal"
+  },
+  {
+    "account_number": "1.1.4.06",
+    "name": "CSLL a Recuperar",
+    "parent_number": "1.1.4",
+    "root_type": "asset",
+    "account_type": "tax",
+    "is_group": 0,
+    "balance_direction": "debit_normal"
+  },
+  {
+    "account_number": "1.1.4.07",
+    "name": "INSS a Compensar",
+    "parent_number": "1.1.4",
+    "root_type": "asset",
+    "account_type": "tax",
+    "is_group": 0,
+    "balance_direction": "debit_normal"
+  },
+  {
+    "account_number": "1.1.5",
+    "name": "Despesas Antecipadas",
+    "parent_number": "1.1",
+    "root_type": "asset",
+    "account_type": null,
+    "is_group": 1,
+    "balance_direction": "debit_normal"
+  },
+  {
+    "account_number": "1.1.5.01",
+    "name": "Prêmios de Seguros a Apropriar",
+    "parent_number": "1.1.5",
+    "root_type": "asset",
+    "account_type": "expense",
+    "is_group": 0,
+    "balance_direction": "debit_normal"
+  },
+  {
+    "account_number": "1.1.5.02",
+    "name": "Aluguéis Pagos Antecipadamente",
+    "parent_number": "1.1.5",
+    "root_type": "asset",
+    "account_type": "expense",
+    "is_group": 0,
+    "balance_direction": "debit_normal"
+  },
+  {
+    "account_number": "1.2",
+    "name": "ATIVO NÃO CIRCULANTE",
+    "parent_number": "1",
+    "root_type": "asset",
+    "account_type": null,
+    "is_group": 1,
+    "balance_direction": "debit_normal"
+  },
+  {
+    "account_number": "1.2.1",
+    "name": "Realizável a Longo Prazo",
+    "parent_number": "1.2",
+    "root_type": "asset",
+    "account_type": null,
+    "is_group": 1,
+    "balance_direction": "debit_normal"
+  },
+  {
+    "account_number": "1.2.1.01",
+    "name": "Duplicatas a Receber LP",
+    "parent_number": "1.2.1",
+    "root_type": "asset",
+    "account_type": "receivable",
+    "is_group": 0,
+    "balance_direction": "debit_normal"
+  },
+  {
+    "account_number": "1.2.1.02",
+    "name": "Empréstimos Concedidos LP",
+    "parent_number": "1.2.1",
+    "root_type": "asset",
+    "account_type": "receivable",
+    "is_group": 0,
+    "balance_direction": "debit_normal"
+  },
+  {
+    "account_number": "1.2.1.03",
+    "name": "Depósitos Judiciais",
+    "parent_number": "1.2.1",
+    "root_type": "asset",
+    "account_type": "receivable",
+    "is_group": 0,
+    "balance_direction": "debit_normal"
+  },
+  {
+    "account_number": "1.2.2",
+    "name": "Investimentos",
+    "parent_number": "1.2",
+    "root_type": "asset",
+    "account_type": null,
+    "is_group": 1,
+    "balance_direction": "debit_normal"
+  },
+  {
+    "account_number": "1.2.2.01",
+    "name": "Participações em Controladas",
+    "parent_number": "1.2.2",
+    "root_type": "asset",
+    "account_type": "fixed_asset",
+    "is_group": 0,
+    "balance_direction": "debit_normal"
+  },
+  {
+    "account_number": "1.2.2.02",
+    "name": "Participações em Coligadas",
+    "parent_number": "1.2.2",
+    "root_type": "asset",
+    "account_type": "fixed_asset",
+    "is_group": 0,
+    "balance_direction": "debit_normal"
+  },
+  {
+    "account_number": "1.2.2.03",
+    "name": "Outros Investimentos Permanentes",
+    "parent_number": "1.2.2",
+    "root_type": "asset",
+    "account_type": "fixed_asset",
+    "is_group": 0,
+    "balance_direction": "debit_normal"
+  },
+  {
+    "account_number": "1.2.3",
+    "name": "Imobilizado",
+    "parent_number": "1.2",
+    "root_type": "asset",
+    "account_type": null,
+    "is_group": 1,
+    "balance_direction": "debit_normal"
+  },
+  {
+    "account_number": "1.2.3.01",
+    "name": "Terrenos",
+    "parent_number": "1.2.3",
+    "root_type": "asset",
+    "account_type": "fixed_asset",
+    "is_group": 0,
+    "balance_direction": "debit_normal"
+  },
+  {
+    "account_number": "1.2.3.02",
+    "name": "Edificações e Construções",
+    "parent_number": "1.2.3",
+    "root_type": "asset",
+    "account_type": "fixed_asset",
+    "is_group": 0,
+    "balance_direction": "debit_normal"
+  },
+  {
+    "account_number": "1.2.3.03",
+    "name": "Máquinas, Equipamentos e Ferramentas",
+    "parent_number": "1.2.3",
+    "root_type": "asset",
+    "account_type": "fixed_asset",
+    "is_group": 0,
+    "balance_direction": "debit_normal"
+  },
+  {
+    "account_number": "1.2.3.04",
+    "name": "Móveis e Utensílios",
+    "parent_number": "1.2.3",
+    "root_type": "asset",
+    "account_type": "fixed_asset",
+    "is_group": 0,
+    "balance_direction": "debit_normal"
+  },
+  {
+    "account_number": "1.2.3.05",
+    "name": "Veículos",
+    "parent_number": "1.2.3",
+    "root_type": "asset",
+    "account_type": "fixed_asset",
+    "is_group": 0,
+    "balance_direction": "debit_normal"
+  },
+  {
+    "account_number": "1.2.3.06",
+    "name": "Equipamentos de Informática",
+    "parent_number": "1.2.3",
+    "root_type": "asset",
+    "account_type": "fixed_asset",
+    "is_group": 0,
+    "balance_direction": "debit_normal"
+  },
+  {
+    "account_number": "1.2.3.07",
+    "name": "Benfeitorias em Imóveis de Terceiros",
+    "parent_number": "1.2.3",
+    "root_type": "asset",
+    "account_type": "fixed_asset",
+    "is_group": 0,
+    "balance_direction": "debit_normal"
+  },
+  {
+    "account_number": "1.2.3.08",
+    "name": "Imobilizações em Andamento",
+    "parent_number": "1.2.3",
+    "root_type": "asset",
+    "account_type": "fixed_asset",
+    "is_group": 0,
+    "balance_direction": "debit_normal"
+  },
+  {
+    "account_number": "1.2.3.09",
+    "name": "(-) Depreciação Acumulada",
+    "parent_number": "1.2.3",
+    "root_type": "asset",
+    "account_type": "accumulated_depreciation",
+    "is_group": 0,
+    "balance_direction": "credit_normal"
+  },
+  {
+    "account_number": "1.2.3.10",
+    "name": "(-) Exaustão Acumulada",
+    "parent_number": "1.2.3",
+    "root_type": "asset",
+    "account_type": "accumulated_depreciation",
+    "is_group": 0,
+    "balance_direction": "credit_normal"
+  },
+  {
+    "account_number": "1.2.4",
+    "name": "Intangível",
+    "parent_number": "1.2",
+    "root_type": "asset",
+    "account_type": null,
+    "is_group": 1,
+    "balance_direction": "debit_normal"
+  },
+  {
+    "account_number": "1.2.4.01",
+    "name": "Softwares",
+    "parent_number": "1.2.4",
+    "root_type": "asset",
+    "account_type": "fixed_asset",
+    "is_group": 0,
+    "balance_direction": "debit_normal"
+  },
+  {
+    "account_number": "1.2.4.02",
+    "name": "Marcas, Direitos e Patentes",
+    "parent_number": "1.2.4",
+    "root_type": "asset",
+    "account_type": "fixed_asset",
+    "is_group": 0,
+    "balance_direction": "debit_normal"
+  },
+  {
+    "account_number": "1.2.4.03",
+    "name": "Fundo de Comércio (Goodwill)",
+    "parent_number": "1.2.4",
+    "root_type": "asset",
+    "account_type": "fixed_asset",
+    "is_group": 0,
+    "balance_direction": "debit_normal"
+  },
+  {
+    "account_number": "1.2.4.04",
+    "name": "(-) Amortização Acumulada",
+    "parent_number": "1.2.4",
+    "root_type": "asset",
+    "account_type": "accumulated_depreciation",
+    "is_group": 0,
+    "balance_direction": "credit_normal"
+  },
+  {
+    "account_number": "1.2.5",
+    "name": "Contas Transitórias do Ativo",
+    "parent_number": "1.2",
+    "root_type": "asset",
+    "account_type": null,
+    "is_group": 1,
+    "balance_direction": "debit_normal"
+  },
+  {
+    "account_number": "1.2.5.01",
+    "name": "Estoque Recebido Não Faturado",
+    "parent_number": "1.2.5",
+    "root_type": "asset",
+    "account_type": "stock_received_not_billed",
+    "is_group": 0,
+    "balance_direction": "debit_normal"
+  },
+  {
+    "account_number": "1.2.5.02",
+    "name": "Ativo Imobilizado Recebido Não Faturado",
+    "parent_number": "1.2.5",
+    "root_type": "asset",
+    "account_type": "asset_received_not_billed",
+    "is_group": 0,
+    "balance_direction": "debit_normal"
+  },
+  {
+    "account_number": "2",
+    "name": "PASSIVO",
+    "parent_number": null,
+    "root_type": "liability",
+    "account_type": null,
+    "is_group": 1,
+    "balance_direction": "credit_normal"
+  },
+  {
+    "account_number": "2.1",
+    "name": "PASSIVO CIRCULANTE",
+    "parent_number": "2",
+    "root_type": "liability",
+    "account_type": null,
+    "is_group": 1,
+    "balance_direction": "credit_normal"
+  },
+  {
+    "account_number": "2.1.1",
+    "name": "Fornecedores",
+    "parent_number": "2.1",
+    "root_type": "liability",
+    "account_type": null,
+    "is_group": 1,
+    "balance_direction": "credit_normal"
+  },
+  {
+    "account_number": "2.1.1.01",
+    "name": "Fornecedores Nacionais",
+    "parent_number": "2.1.1",
+    "root_type": "liability",
+    "account_type": "payable",
+    "is_group": 0,
+    "balance_direction": "credit_normal"
+  },
+  {
+    "account_number": "2.1.1.02",
+    "name": "Fornecedores Exterior",
+    "parent_number": "2.1.1",
+    "root_type": "liability",
+    "account_type": "payable",
+    "is_group": 0,
+    "balance_direction": "credit_normal"
+  },
+  {
+    "account_number": "2.1.2",
+    "name": "Obrigações Trabalhistas e Previdenciárias",
+    "parent_number": "2.1",
+    "root_type": "liability",
+    "account_type": null,
+    "is_group": 1,
+    "balance_direction": "credit_normal"
+  },
+  {
+    "account_number": "2.1.2.01",
+    "name": "Salários e Ordenados a Pagar",
+    "parent_number": "2.1.2",
+    "root_type": "liability",
+    "account_type": "payroll_payable",
+    "is_group": 0,
+    "balance_direction": "credit_normal"
+  },
+  {
+    "account_number": "2.1.2.02",
+    "name": "Pró-labore a Pagar",
+    "parent_number": "2.1.2",
+    "root_type": "liability",
+    "account_type": "payroll_payable",
+    "is_group": 0,
+    "balance_direction": "credit_normal"
+  },
+  {
+    "account_number": "2.1.2.03",
+    "name": "Férias a Pagar",
+    "parent_number": "2.1.2",
+    "root_type": "liability",
+    "account_type": "payroll_payable",
+    "is_group": 0,
+    "balance_direction": "credit_normal"
+  },
+  {
+    "account_number": "2.1.2.04",
+    "name": "13º Salário a Pagar",
+    "parent_number": "2.1.2",
+    "root_type": "liability",
+    "account_type": "payroll_payable",
+    "is_group": 0,
+    "balance_direction": "credit_normal"
+  },
+  {
+    "account_number": "2.1.2.05",
+    "name": "FGTS a Recolher",
+    "parent_number": "2.1.2",
+    "root_type": "liability",
+    "account_type": "payroll_payable",
+    "is_group": 0,
+    "balance_direction": "credit_normal"
+  },
+  {
+    "account_number": "2.1.2.06",
+    "name": "INSS a Recolher",
+    "parent_number": "2.1.2",
+    "root_type": "liability",
+    "account_type": "payroll_payable",
+    "is_group": 0,
+    "balance_direction": "credit_normal"
+  },
+  {
+    "account_number": "2.1.2.07",
+    "name": "IRRF Trabalhista a Recolher",
+    "parent_number": "2.1.2",
+    "root_type": "liability",
+    "account_type": "tax",
+    "is_group": 0,
+    "balance_direction": "credit_normal"
+  },
+  {
+    "account_number": "2.1.2.08",
+    "name": "Provisão de Férias e Encargos",
+    "parent_number": "2.1.2",
+    "root_type": "liability",
+    "account_type": "payroll_payable",
+    "is_group": 0,
+    "balance_direction": "credit_normal"
+  },
+  {
+    "account_number": "2.1.2.09",
+    "name": "Provisão de 13º Salário e Encargos",
+    "parent_number": "2.1.2",
+    "root_type": "liability",
+    "account_type": "payroll_payable",
+    "is_group": 0,
+    "balance_direction": "credit_normal"
+  },
+  {
+    "account_number": "2.1.2.10",
+    "name": "Contribuição Sindical a Recolher",
+    "parent_number": "2.1.2",
+    "root_type": "liability",
+    "account_type": "payroll_payable",
+    "is_group": 0,
+    "balance_direction": "credit_normal"
+  },
+  {
+    "account_number": "2.1.3",
+    "name": "Obrigações Tributárias",
+    "parent_number": "2.1",
+    "root_type": "liability",
+    "account_type": null,
+    "is_group": 1,
+    "balance_direction": "credit_normal"
+  },
+  {
+    "account_number": "2.1.3.01",
+    "name": "ICMS a Recolher",
+    "parent_number": "2.1.3",
+    "root_type": "liability",
+    "account_type": "tax",
+    "is_group": 0,
+    "balance_direction": "credit_normal"
+  },
+  {
+    "account_number": "2.1.3.02",
+    "name": "ICMS ST a Recolher",
+    "parent_number": "2.1.3",
+    "root_type": "liability",
+    "account_type": "tax",
+    "is_group": 0,
+    "balance_direction": "credit_normal"
+  },
+  {
+    "account_number": "2.1.3.03",
+    "name": "IPI a Recolher",
+    "parent_number": "2.1.3",
+    "root_type": "liability",
+    "account_type": "tax",
+    "is_group": 0,
+    "balance_direction": "credit_normal"
+  },
+  {
+    "account_number": "2.1.3.04",
+    "name": "PIS a Recolher",
+    "parent_number": "2.1.3",
+    "root_type": "liability",
+    "account_type": "tax",
+    "is_group": 0,
+    "balance_direction": "credit_normal"
+  },
+  {
+    "account_number": "2.1.3.05",
+    "name": "COFINS a Recolher",
+    "parent_number": "2.1.3",
+    "root_type": "liability",
+    "account_type": "tax",
+    "is_group": 0,
+    "balance_direction": "credit_normal"
+  },
+  {
+    "account_number": "2.1.3.06",
+    "name": "IRPJ a Recolher",
+    "parent_number": "2.1.3",
+    "root_type": "liability",
+    "account_type": "tax",
+    "is_group": 0,
+    "balance_direction": "credit_normal"
+  },
+  {
+    "account_number": "2.1.3.07",
+    "name": "CSLL a Recolher",
+    "parent_number": "2.1.3",
+    "root_type": "liability",
+    "account_type": "tax",
+    "is_group": 0,
+    "balance_direction": "credit_normal"
+  },
+  {
+    "account_number": "2.1.3.08",
+    "name": "ISS a Recolher",
+    "parent_number": "2.1.3",
+    "root_type": "liability",
+    "account_type": "tax",
+    "is_group": 0,
+    "balance_direction": "credit_normal"
+  },
+  {
+    "account_number": "2.1.3.09",
+    "name": "IRRF s/ Serviços a Recolher",
+    "parent_number": "2.1.3",
+    "root_type": "liability",
+    "account_type": "tax",
+    "is_group": 0,
+    "balance_direction": "credit_normal"
+  },
+  {
+    "account_number": "2.1.3.10",
+    "name": "PIS/COFINS/CSLL Retidos na Fonte",
+    "parent_number": "2.1.3",
+    "root_type": "liability",
+    "account_type": "tax",
+    "is_group": 0,
+    "balance_direction": "credit_normal"
+  },
+  {
+    "account_number": "2.1.3.11",
+    "name": "INSS Retido na Fonte",
+    "parent_number": "2.1.3",
+    "root_type": "liability",
+    "account_type": "tax",
+    "is_group": 0,
+    "balance_direction": "credit_normal"
+  },
+  {
+    "account_number": "2.1.3.12",
+    "name": "DAS - Simples Nacional a Recolher",
+    "parent_number": "2.1.3",
+    "root_type": "liability",
+    "account_type": "tax",
+    "is_group": 0,
+    "balance_direction": "credit_normal"
+  },
+  {
+    "account_number": "2.1.3.13",
+    "name": "Parcelamentos de Débitos Tributários CP",
+    "parent_number": "2.1.3",
+    "root_type": "liability",
+    "account_type": "tax",
+    "is_group": 0,
+    "balance_direction": "credit_normal"
+  },
+  {
+    "account_number": "2.1.4",
+    "name": "Empréstimos e Financiamentos CP",
+    "parent_number": "2.1",
+    "root_type": "liability",
+    "account_type": null,
+    "is_group": 1,
+    "balance_direction": "credit_normal"
+  },
+  {
+    "account_number": "2.1.4.01",
+    "name": "Empréstimos Bancários CP",
+    "parent_number": "2.1.4",
+    "root_type": "liability",
+    "account_type": "payable",
+    "is_group": 0,
+    "balance_direction": "credit_normal"
+  },
+  {
+    "account_number": "2.1.4.02",
+    "name": "Financiamentos CP",
+    "parent_number": "2.1.4",
+    "root_type": "liability",
+    "account_type": "payable",
+    "is_group": 0,
+    "balance_direction": "credit_normal"
+  },
+  {
+    "account_number": "2.1.5",
+    "name": "Contas a Pagar e Outras Obrigações",
+    "parent_number": "2.1",
+    "root_type": "liability",
+    "account_type": null,
+    "is_group": 1,
+    "balance_direction": "credit_normal"
+  },
+  {
+    "account_number": "2.1.5.01",
+    "name": "Contas a Pagar Diversas",
+    "parent_number": "2.1.5",
+    "root_type": "liability",
+    "account_type": "payable",
+    "is_group": 0,
+    "balance_direction": "credit_normal"
+  },
+  {
+    "account_number": "2.1.5.02",
+    "name": "Adiantamentos de Clientes",
+    "parent_number": "2.1.5",
+    "root_type": "liability",
+    "account_type": "payable",
+    "is_group": 0,
+    "balance_direction": "credit_normal"
+  },
+  {
+    "account_number": "2.1.5.03",
+    "name": "Aluguéis a Pagar",
+    "parent_number": "2.1.5",
+    "root_type": "liability",
+    "account_type": "payable",
+    "is_group": 0,
+    "balance_direction": "credit_normal"
+  },
+  {
+    "account_number": "2.1.6",
+    "name": "Provisões Circulantes",
+    "parent_number": "2.1",
+    "root_type": "liability",
+    "account_type": null,
+    "is_group": 1,
+    "balance_direction": "credit_normal"
+  },
+  {
+    "account_number": "2.1.6.01",
+    "name": "Provisão para Garantias",
+    "parent_number": "2.1.6",
+    "root_type": "liability",
+    "account_type": "payable",
+    "is_group": 0,
+    "balance_direction": "credit_normal"
+  },
+  {
+    "account_number": "2.1.6.02",
+    "name": "Provisão para Contingências CP",
+    "parent_number": "2.1.6",
+    "root_type": "liability",
+    "account_type": "payable",
+    "is_group": 0,
+    "balance_direction": "credit_normal"
+  },
+  {
+    "account_number": "2.2",
+    "name": "PASSIVO NÃO CIRCULANTE",
+    "parent_number": "2",
+    "root_type": "liability",
+    "account_type": null,
+    "is_group": 1,
+    "balance_direction": "credit_normal"
+  },
+  {
+    "account_number": "2.2.1",
+    "name": "Empréstimos e Financiamentos LP",
+    "parent_number": "2.2",
+    "root_type": "liability",
+    "account_type": null,
+    "is_group": 1,
+    "balance_direction": "credit_normal"
+  },
+  {
+    "account_number": "2.2.1.01",
+    "name": "Empréstimos Bancários LP",
+    "parent_number": "2.2.1",
+    "root_type": "liability",
+    "account_type": "payable",
+    "is_group": 0,
+    "balance_direction": "credit_normal"
+  },
+  {
+    "account_number": "2.2.1.02",
+    "name": "Financiamentos LP",
+    "parent_number": "2.2.1",
+    "root_type": "liability",
+    "account_type": "payable",
+    "is_group": 0,
+    "balance_direction": "credit_normal"
+  },
+  {
+    "account_number": "2.2.2",
+    "name": "Obrigações Fiscais LP",
+    "parent_number": "2.2",
+    "root_type": "liability",
+    "account_type": null,
+    "is_group": 1,
+    "balance_direction": "credit_normal"
+  },
+  {
+    "account_number": "2.2.2.01",
+    "name": "Parcelamentos de Débitos Tributários LP",
+    "parent_number": "2.2.2",
+    "root_type": "liability",
+    "account_type": "tax",
+    "is_group": 0,
+    "balance_direction": "credit_normal"
+  },
+  {
+    "account_number": "2.2.2.02",
+    "name": "Tributos com Exigibilidade Suspensa",
+    "parent_number": "2.2.2",
+    "root_type": "liability",
+    "account_type": "tax",
+    "is_group": 0,
+    "balance_direction": "credit_normal"
+  },
+  {
+    "account_number": "2.2.3",
+    "name": "Provisões LP",
+    "parent_number": "2.2",
+    "root_type": "liability",
+    "account_type": null,
+    "is_group": 1,
+    "balance_direction": "credit_normal"
+  },
+  {
+    "account_number": "2.2.3.01",
+    "name": "Provisão para Contingências LP",
+    "parent_number": "2.2.3",
+    "root_type": "liability",
+    "account_type": "payable",
+    "is_group": 0,
+    "balance_direction": "credit_normal"
+  },
+  {
+    "account_number": "2.3",
+    "name": "PATRIMÔNIO LÍQUIDO",
+    "parent_number": "2",
+    "root_type": "equity",
+    "account_type": null,
+    "is_group": 1,
+    "balance_direction": "credit_normal"
+  },
+  {
+    "account_number": "2.3.1",
+    "name": "Capital Social",
+    "parent_number": "2.3",
+    "root_type": "equity",
+    "account_type": null,
+    "is_group": 1,
+    "balance_direction": "credit_normal"
+  },
+  {
+    "account_number": "2.3.1.01",
+    "name": "Capital Social Subscrito",
+    "parent_number": "2.3.1",
+    "root_type": "equity",
+    "account_type": "equity",
+    "is_group": 0,
+    "balance_direction": "credit_normal"
+  },
+  {
+    "account_number": "2.3.1.02",
+    "name": "(-) Capital Social a Integralizar",
+    "parent_number": "2.3.1",
+    "root_type": "equity",
+    "account_type": "equity",
+    "is_group": 0,
+    "balance_direction": "debit_normal"
+  },
+  {
+    "account_number": "2.3.2",
+    "name": "Reservas de Capital",
+    "parent_number": "2.3",
+    "root_type": "equity",
+    "account_type": null,
+    "is_group": 1,
+    "balance_direction": "credit_normal"
+  },
+  {
+    "account_number": "2.3.2.01",
+    "name": "Ágio na Emissão de Ações",
+    "parent_number": "2.3.2",
+    "root_type": "equity",
+    "account_type": "equity",
+    "is_group": 0,
+    "balance_direction": "credit_normal"
+  },
+  {
+    "account_number": "2.3.3",
+    "name": "Reservas de Lucros",
+    "parent_number": "2.3",
+    "root_type": "equity",
+    "account_type": null,
+    "is_group": 1,
+    "balance_direction": "credit_normal"
+  },
+  {
+    "account_number": "2.3.3.01",
+    "name": "Reserva Legal",
+    "parent_number": "2.3.3",
+    "root_type": "equity",
+    "account_type": "equity",
+    "is_group": 0,
+    "balance_direction": "credit_normal"
+  },
+  {
+    "account_number": "2.3.3.02",
+    "name": "Reserva Estatutária",
+    "parent_number": "2.3.3",
+    "root_type": "equity",
+    "account_type": "equity",
+    "is_group": 0,
+    "balance_direction": "credit_normal"
+  },
+  {
+    "account_number": "2.3.3.03",
+    "name": "Dividendo Adicional Proposto",
+    "parent_number": "2.3.3",
+    "root_type": "equity",
+    "account_type": "equity",
+    "is_group": 0,
+    "balance_direction": "credit_normal"
+  },
+  {
+    "account_number": "2.3.4",
+    "name": "Lucros ou Prejuízos Acumulados",
+    "parent_number": "2.3",
+    "root_type": "equity",
+    "account_type": null,
+    "is_group": 1,
+    "balance_direction": "credit_normal"
+  },
+  {
+    "account_number": "2.3.4.01",
+    "name": "Lucros Acumulados",
+    "parent_number": "2.3.4",
+    "root_type": "equity",
+    "account_type": "equity",
+    "is_group": 0,
+    "balance_direction": "credit_normal"
+  },
+  {
+    "account_number": "2.3.4.02",
+    "name": "(-) Prejuízos Acumulados",
+    "parent_number": "2.3.4",
+    "root_type": "equity",
+    "account_type": "equity",
+    "is_group": 0,
+    "balance_direction": "debit_normal"
+  },
+  {
+    "account_number": "2.3.4.03",
+    "name": "Ajuste de Avaliação Patrimonial",
+    "parent_number": "2.3.4",
+    "root_type": "equity",
+    "account_type": "equity",
+    "is_group": 0,
+    "balance_direction": "credit_normal"
+  },
+  {
+    "account_number": "3",
+    "name": "RECEITAS",
+    "parent_number": null,
+    "root_type": "income",
+    "account_type": null,
+    "is_group": 1,
+    "balance_direction": "credit_normal"
+  },
+  {
+    "account_number": "3.1",
+    "name": "RECEITA OPERACIONAL BRUTA",
+    "parent_number": "3",
+    "root_type": "income",
+    "account_type": null,
+    "is_group": 1,
+    "balance_direction": "credit_normal"
+  },
+  {
+    "account_number": "3.1.1",
+    "name": "Receita Bruta de Vendas",
+    "parent_number": "3.1",
+    "root_type": "income",
+    "account_type": null,
+    "is_group": 1,
+    "balance_direction": "credit_normal"
+  },
+  {
+    "account_number": "3.1.1.01",
+    "name": "Venda de Produtos Fabricados - Mercado Interno",
+    "parent_number": "3.1.1",
+    "root_type": "income",
+    "account_type": "revenue",
+    "is_group": 0,
+    "balance_direction": "credit_normal"
+  },
+  {
+    "account_number": "3.1.1.02",
+    "name": "Venda de Produtos Fabricados - Exportação",
+    "parent_number": "3.1.1",
+    "root_type": "income",
+    "account_type": "revenue",
+    "is_group": 0,
+    "balance_direction": "credit_normal"
+  },
+  {
+    "account_number": "3.1.1.03",
+    "name": "Venda de Mercadorias - Mercado Interno",
+    "parent_number": "3.1.1",
+    "root_type": "income",
+    "account_type": "revenue",
+    "is_group": 0,
+    "balance_direction": "credit_normal"
+  },
+  {
+    "account_number": "3.1.1.04",
+    "name": "Venda de Mercadorias - Exportação",
+    "parent_number": "3.1.1",
+    "root_type": "income",
+    "account_type": "revenue",
+    "is_group": 0,
+    "balance_direction": "credit_normal"
+  },
+  {
+    "account_number": "3.1.1.05",
+    "name": "Prestação de Serviços - Mercado Interno",
+    "parent_number": "3.1.1",
+    "root_type": "income",
+    "account_type": "revenue",
+    "is_group": 0,
+    "balance_direction": "credit_normal"
+  },
+  {
+    "account_number": "3.1.1.06",
+    "name": "Prestação de Serviços - Exportação",
+    "parent_number": "3.1.1",
+    "root_type": "income",
+    "account_type": "revenue",
+    "is_group": 0,
+    "balance_direction": "credit_normal"
+  },
+  {
+    "account_number": "3.1.2",
+    "name": "DEDUÇÕES DA RECEITA BRUTA",
+    "parent_number": "3.1",
+    "root_type": "income",
+    "account_type": null,
+    "is_group": 1,
+    "balance_direction": "debit_normal"
+  },
+  {
+    "account_number": "3.1.2.01",
+    "name": "(-) Devoluções de Vendas",
+    "parent_number": "3.1.2",
+    "root_type": "income",
+    "account_type": "revenue",
+    "is_group": 0,
+    "balance_direction": "debit_normal"
+  },
+  {
+    "account_number": "3.1.2.02",
+    "name": "(-) Descontos Incondicionais Concedidos",
+    "parent_number": "3.1.2",
+    "root_type": "income",
+    "account_type": "revenue",
+    "is_group": 0,
+    "balance_direction": "debit_normal"
+  },
+  {
+    "account_number": "3.1.2.03",
+    "name": "(-) ICMS s/ Vendas",
+    "parent_number": "3.1.2",
+    "root_type": "income",
+    "account_type": "tax",
+    "is_group": 0,
+    "balance_direction": "debit_normal"
+  },
+  {
+    "account_number": "3.1.2.04",
+    "name": "(-) PIS s/ Vendas",
+    "parent_number": "3.1.2",
+    "root_type": "income",
+    "account_type": "tax",
+    "is_group": 0,
+    "balance_direction": "debit_normal"
+  },
+  {
+    "account_number": "3.1.2.05",
+    "name": "(-) COFINS s/ Vendas",
+    "parent_number": "3.1.2",
+    "root_type": "income",
+    "account_type": "tax",
+    "is_group": 0,
+    "balance_direction": "debit_normal"
+  },
+  {
+    "account_number": "3.1.2.06",
+    "name": "(-) ISS s/ Serviços",
+    "parent_number": "3.1.2",
+    "root_type": "income",
+    "account_type": "tax",
+    "is_group": 0,
+    "balance_direction": "debit_normal"
+  },
+  {
+    "account_number": "3.1.2.07",
+    "name": "(-) IPI s/ Vendas",
+    "parent_number": "3.1.2",
+    "root_type": "income",
+    "account_type": "tax",
+    "is_group": 0,
+    "balance_direction": "debit_normal"
+  },
+  {
+    "account_number": "3.1.2.08",
+    "name": "(-) ICMS ST s/ Vendas",
+    "parent_number": "3.1.2",
+    "root_type": "income",
+    "account_type": "tax",
+    "is_group": 0,
+    "balance_direction": "debit_normal"
+  },
+  {
+    "account_number": "3.2",
+    "name": "OUTRAS RECEITAS OPERACIONAIS",
+    "parent_number": "3",
+    "root_type": "income",
+    "account_type": null,
+    "is_group": 1,
+    "balance_direction": "credit_normal"
+  },
+  {
+    "account_number": "3.2.1.01",
+    "name": "Receitas Financeiras",
+    "parent_number": "3.2",
+    "root_type": "income",
+    "account_type": "revenue",
+    "is_group": 0,
+    "balance_direction": "credit_normal"
+  },
+  {
+    "account_number": "3.2.1.02",
+    "name": "Variação Cambial Ativa",
+    "parent_number": "3.2",
+    "root_type": "income",
+    "account_type": "exchange_gain_loss",
+    "is_group": 0,
+    "balance_direction": "credit_normal"
+  },
+  {
+    "account_number": "3.2.1.03",
+    "name": "Juros Ativos",
+    "parent_number": "3.2",
+    "root_type": "income",
+    "account_type": "revenue",
+    "is_group": 0,
+    "balance_direction": "credit_normal"
+  },
+  {
+    "account_number": "3.2.1.04",
+    "name": "Descontos Financeiros Obtidos",
+    "parent_number": "3.2",
+    "root_type": "income",
+    "account_type": "revenue",
+    "is_group": 0,
+    "balance_direction": "credit_normal"
+  },
+  {
+    "account_number": "3.2.1.05",
+    "name": "Recuperação de Despesas",
+    "parent_number": "3.2",
+    "root_type": "income",
+    "account_type": "revenue",
+    "is_group": 0,
+    "balance_direction": "credit_normal"
+  },
+  {
+    "account_number": "3.2.1.06",
+    "name": "Reversão de Provisões",
+    "parent_number": "3.2",
+    "root_type": "income",
+    "account_type": "revenue",
+    "is_group": 0,
+    "balance_direction": "credit_normal"
+  },
+  {
+    "account_number": "3.3",
+    "name": "OUTRAS RECEITAS",
+    "parent_number": "3",
+    "root_type": "income",
+    "account_type": null,
+    "is_group": 1,
+    "balance_direction": "credit_normal"
+  },
+  {
+    "account_number": "3.3.1.01",
+    "name": "Ganho na Venda de Imobilizado",
+    "parent_number": "3.3",
+    "root_type": "income",
+    "account_type": "revenue",
+    "is_group": 0,
+    "balance_direction": "credit_normal"
+  },
+  {
+    "account_number": "3.3.1.02",
+    "name": "Ganho na Venda de Investimentos",
+    "parent_number": "3.3",
+    "root_type": "income",
+    "account_type": "revenue",
+    "is_group": 0,
+    "balance_direction": "credit_normal"
+  },
+  {
+    "account_number": "3.3.1.03",
+    "name": "Resultado de Equivalência Patrimonial",
+    "parent_number": "3.3",
+    "root_type": "income",
+    "account_type": "revenue",
+    "is_group": 0,
+    "balance_direction": "credit_normal"
+  },
+  {
+    "account_number": "4",
+    "name": "CUSTOS, DESPESAS E PERDAS",
+    "parent_number": null,
+    "root_type": "expense",
+    "account_type": null,
+    "is_group": 1,
+    "balance_direction": "debit_normal"
+  },
+  {
+    "account_number": "4.1",
+    "name": "CUSTOS OPERACIONAIS",
+    "parent_number": "4",
+    "root_type": "expense",
+    "account_type": null,
+    "is_group": 1,
+    "balance_direction": "debit_normal"
+  },
+  {
+    "account_number": "4.1.1",
+    "name": "Custo dos Produtos Vendidos (CPV)",
+    "parent_number": "4.1",
+    "root_type": "expense",
+    "account_type": null,
+    "is_group": 1,
+    "balance_direction": "debit_normal"
+  },
+  {
+    "account_number": "4.1.1.01",
+    "name": "CPV - Matérias-Primas Consumidas (Bloco K)",
+    "parent_number": "4.1.1",
+    "root_type": "expense",
+    "account_type": "cost_of_goods_sold",
+    "is_group": 0,
+    "balance_direction": "debit_normal"
+  },
+  {
+    "account_number": "4.1.1.02",
+    "name": "CPV - Material de Embalagem Consumido (Bloco K)",
+    "parent_number": "4.1.1",
+    "root_type": "expense",
+    "account_type": "cost_of_goods_sold",
+    "is_group": 0,
+    "balance_direction": "debit_normal"
+  },
+  {
+    "account_number": "4.1.1.03",
+    "name": "CPV - Mão de Obra Direta",
+    "parent_number": "4.1.1",
+    "root_type": "expense",
+    "account_type": "cost_of_goods_sold",
+    "is_group": 0,
+    "balance_direction": "debit_normal"
+  },
+  {
+    "account_number": "4.1.1.04",
+    "name": "CPV - Custos Indiretos de Fabricação (CIF)",
+    "parent_number": "4.1.1",
+    "root_type": "expense",
+    "account_type": "cost_of_goods_sold",
+    "is_group": 0,
+    "balance_direction": "debit_normal"
+  },
+  {
+    "account_number": "4.1.1.05",
+    "name": "CPV - Energia Elétrica da Produção",
+    "parent_number": "4.1.1",
+    "root_type": "expense",
+    "account_type": "cost_of_goods_sold",
+    "is_group": 0,
+    "balance_direction": "debit_normal"
+  },
+  {
+    "account_number": "4.1.1.06",
+    "name": "CPV - Depreciação de Máquinas e Equipamentos",
+    "parent_number": "4.1.1",
+    "root_type": "expense",
+    "account_type": "cost_of_goods_sold",
+    "is_group": 0,
+    "balance_direction": "debit_normal"
+  },
+  {
+    "account_number": "4.1.1.07",
+    "name": "CPV - Manutenção de Equipamentos de Produção",
+    "parent_number": "4.1.1",
+    "root_type": "expense",
+    "account_type": "cost_of_goods_sold",
+    "is_group": 0,
+    "balance_direction": "debit_normal"
+  },
+  {
+    "account_number": "4.1.2",
+    "name": "Custo das Mercadorias Vendidas (CMV)",
+    "parent_number": "4.1",
+    "root_type": "expense",
+    "account_type": null,
+    "is_group": 1,
+    "balance_direction": "debit_normal"
+  },
+  {
+    "account_number": "4.1.2.01",
+    "name": "CMV - Mercadorias para Revenda",
+    "parent_number": "4.1.2",
+    "root_type": "expense",
+    "account_type": "cost_of_goods_sold",
+    "is_group": 0,
+    "balance_direction": "debit_normal"
+  },
+  {
+    "account_number": "4.1.2.02",
+    "name": "CMV - Frete s/ Compras",
+    "parent_number": "4.1.2",
+    "root_type": "expense",
+    "account_type": "cost_of_goods_sold",
+    "is_group": 0,
+    "balance_direction": "debit_normal"
+  },
+  {
+    "account_number": "4.1.3",
+    "name": "Custo dos Serviços Prestados (CSP)",
+    "parent_number": "4.1",
+    "root_type": "expense",
+    "account_type": null,
+    "is_group": 1,
+    "balance_direction": "debit_normal"
+  },
+  {
+    "account_number": "4.1.3.01",
+    "name": "CSP - Mão de Obra Direta",
+    "parent_number": "4.1.3",
+    "root_type": "expense",
+    "account_type": "cost_of_goods_sold",
+    "is_group": 0,
+    "balance_direction": "debit_normal"
+  },
+  {
+    "account_number": "4.1.3.02",
+    "name": "CSP - Materiais Aplicados",
+    "parent_number": "4.1.3",
+    "root_type": "expense",
+    "account_type": "cost_of_goods_sold",
+    "is_group": 0,
+    "balance_direction": "debit_normal"
+  },
+  {
+    "account_number": "4.1.3.03",
+    "name": "CSP - Encargos Diretos",
+    "parent_number": "4.1.3",
+    "root_type": "expense",
+    "account_type": "cost_of_goods_sold",
+    "is_group": 0,
+    "balance_direction": "debit_normal"
+  },
+  {
+    "account_number": "4.2",
+    "name": "DESPESAS OPERACIONAIS",
+    "parent_number": "4",
+    "root_type": "expense",
+    "account_type": null,
+    "is_group": 1,
+    "balance_direction": "debit_normal"
+  },
+  {
+    "account_number": "4.2.1",
+    "name": "Despesas com Vendas e Comercialização",
+    "parent_number": "4.2",
+    "root_type": "expense",
+    "account_type": null,
+    "is_group": 1,
+    "balance_direction": "debit_normal"
+  },
+  {
+    "account_number": "4.2.1.01",
+    "name": "Comissões s/ Vendas",
+    "parent_number": "4.2.1",
+    "root_type": "expense",
+    "account_type": "expense",
+    "is_group": 0,
+    "balance_direction": "debit_normal"
+  },
+  {
+    "account_number": "4.2.1.02",
+    "name": "Propaganda e Publicidade",
+    "parent_number": "4.2.1",
+    "root_type": "expense",
+    "account_type": "expense",
+    "is_group": 0,
+    "balance_direction": "debit_normal"
+  },
+  {
+    "account_number": "4.2.1.03",
+    "name": "Frete s/ Vendas",
+    "parent_number": "4.2.1",
+    "root_type": "expense",
+    "account_type": "expense",
+    "is_group": 0,
+    "balance_direction": "debit_normal"
+  },
+  {
+    "account_number": "4.2.1.04",
+    "name": "Embalagens para Expedição",
+    "parent_number": "4.2.1",
+    "root_type": "expense",
+    "account_type": "expense",
+    "is_group": 0,
+    "balance_direction": "debit_normal"
+  },
+  {
+    "account_number": "4.2.2",
+    "name": "Despesas com Pessoal",
+    "parent_number": "4.2",
+    "root_type": "expense",
+    "account_type": null,
+    "is_group": 1,
+    "balance_direction": "debit_normal"
+  },
+  {
+    "account_number": "4.2.2.01",
+    "name": "Salários e Ordenados",
+    "parent_number": "4.2.2",
+    "root_type": "expense",
+    "account_type": "expense",
+    "is_group": 0,
+    "balance_direction": "debit_normal"
+  },
+  {
+    "account_number": "4.2.2.02",
+    "name": "Pró-labore",
+    "parent_number": "4.2.2",
+    "root_type": "expense",
+    "account_type": "expense",
+    "is_group": 0,
+    "balance_direction": "debit_normal"
+  },
+  {
+    "account_number": "4.2.2.03",
+    "name": "Férias",
+    "parent_number": "4.2.2",
+    "root_type": "expense",
+    "account_type": "expense",
+    "is_group": 0,
+    "balance_direction": "debit_normal"
+  },
+  {
+    "account_number": "4.2.2.04",
+    "name": "13º Salário",
+    "parent_number": "4.2.2",
+    "root_type": "expense",
+    "account_type": "expense",
+    "is_group": 0,
+    "balance_direction": "debit_normal"
+  },
+  {
+    "account_number": "4.2.2.05",
+    "name": "FGTS",
+    "parent_number": "4.2.2",
+    "root_type": "expense",
+    "account_type": "expense",
+    "is_group": 0,
+    "balance_direction": "debit_normal"
+  },
+  {
+    "account_number": "4.2.2.06",
+    "name": "INSS Patronal (CPP)",
+    "parent_number": "4.2.2",
+    "root_type": "expense",
+    "account_type": "expense",
+    "is_group": 0,
+    "balance_direction": "debit_normal"
+  },
+  {
+    "account_number": "4.2.2.07",
+    "name": "Vale-Transporte",
+    "parent_number": "4.2.2",
+    "root_type": "expense",
+    "account_type": "expense",
+    "is_group": 0,
+    "balance_direction": "debit_normal"
+  },
+  {
+    "account_number": "4.2.2.08",
+    "name": "Vale-Refeição / Alimentação",
+    "parent_number": "4.2.2",
+    "root_type": "expense",
+    "account_type": "expense",
+    "is_group": 0,
+    "balance_direction": "debit_normal"
+  },
+  {
+    "account_number": "4.2.2.09",
+    "name": "Plano de Saúde e Assistência Médica",
+    "parent_number": "4.2.2",
+    "root_type": "expense",
+    "account_type": "expense",
+    "is_group": 0,
+    "balance_direction": "debit_normal"
+  },
+  {
+    "account_number": "4.2.2.10",
+    "name": "Treinamento e Desenvolvimento",
+    "parent_number": "4.2.2",
+    "root_type": "expense",
+    "account_type": "expense",
+    "is_group": 0,
+    "balance_direction": "debit_normal"
+  },
+  {
+    "account_number": "4.2.3",
+    "name": "Despesas Administrativas",
+    "parent_number": "4.2",
+    "root_type": "expense",
+    "account_type": null,
+    "is_group": 1,
+    "balance_direction": "debit_normal"
+  },
+  {
+    "account_number": "4.2.3.01",
+    "name": "Aluguel de Imóveis",
+    "parent_number": "4.2.3",
+    "root_type": "expense",
+    "account_type": "expense",
+    "is_group": 0,
+    "balance_direction": "debit_normal"
+  },
+  {
+    "account_number": "4.2.3.02",
+    "name": "Condomínio",
+    "parent_number": "4.2.3",
+    "root_type": "expense",
+    "account_type": "expense",
+    "is_group": 0,
+    "balance_direction": "debit_normal"
+  },
+  {
+    "account_number": "4.2.3.03",
+    "name": "Energia Elétrica",
+    "parent_number": "4.2.3",
+    "root_type": "expense",
+    "account_type": "expense",
+    "is_group": 0,
+    "balance_direction": "debit_normal"
+  },
+  {
+    "account_number": "4.2.3.04",
+    "name": "Água e Esgoto",
+    "parent_number": "4.2.3",
+    "root_type": "expense",
+    "account_type": "expense",
+    "is_group": 0,
+    "balance_direction": "debit_normal"
+  },
+  {
+    "account_number": "4.2.3.05",
+    "name": "Internet e Telefonia",
+    "parent_number": "4.2.3",
+    "root_type": "expense",
+    "account_type": "expense",
+    "is_group": 0,
+    "balance_direction": "debit_normal"
+  },
+  {
+    "account_number": "4.2.3.06",
+    "name": "Material de Escritório e Expediente",
+    "parent_number": "4.2.3",
+    "root_type": "expense",
+    "account_type": "expense",
+    "is_group": 0,
+    "balance_direction": "debit_normal"
+  },
+  {
+    "account_number": "4.2.3.07",
+    "name": "Serviços de Terceiros PJ",
+    "parent_number": "4.2.3",
+    "root_type": "expense",
+    "account_type": "expense",
+    "is_group": 0,
+    "balance_direction": "debit_normal"
+  },
+  {
+    "account_number": "4.2.3.08",
+    "name": "Honorários Profissionais (Contábil, Jurídico)",
+    "parent_number": "4.2.3",
+    "root_type": "expense",
+    "account_type": "expense",
+    "is_group": 0,
+    "balance_direction": "debit_normal"
+  },
+  {
+    "account_number": "4.2.3.09",
+    "name": "Serviços de TI e Software",
+    "parent_number": "4.2.3",
+    "root_type": "expense",
+    "account_type": "expense",
+    "is_group": 0,
+    "balance_direction": "debit_normal"
+  },
+  {
+    "account_number": "4.2.4",
+    "name": "Despesas Financeiras",
+    "parent_number": "4.2",
+    "root_type": "expense",
+    "account_type": null,
+    "is_group": 1,
+    "balance_direction": "debit_normal"
+  },
+  {
+    "account_number": "4.2.4.01",
+    "name": "Juros Passivos",
+    "parent_number": "4.2.4",
+    "root_type": "expense",
+    "account_type": "expense",
+    "is_group": 0,
+    "balance_direction": "debit_normal"
+  },
+  {
+    "account_number": "4.2.4.02",
+    "name": "Tarifas Bancárias",
+    "parent_number": "4.2.4",
+    "root_type": "expense",
+    "account_type": "expense",
+    "is_group": 0,
+    "balance_direction": "debit_normal"
+  },
+  {
+    "account_number": "4.2.4.03",
+    "name": "Variação Cambial Passiva",
+    "parent_number": "4.2.4",
+    "root_type": "expense",
+    "account_type": "exchange_gain_loss",
+    "is_group": 0,
+    "balance_direction": "debit_normal"
+  },
+  {
+    "account_number": "4.2.4.04",
+    "name": "IOF",
+    "parent_number": "4.2.4",
+    "root_type": "expense",
+    "account_type": "tax",
+    "is_group": 0,
+    "balance_direction": "debit_normal"
+  },
+  {
+    "account_number": "4.2.4.05",
+    "name": "Descontos Financeiros Concedidos",
+    "parent_number": "4.2.4",
+    "root_type": "expense",
+    "account_type": "expense",
+    "is_group": 0,
+    "balance_direction": "debit_normal"
+  },
+  {
+    "account_number": "4.2.5",
+    "name": "Despesas Tributárias",
+    "parent_number": "4.2",
+    "root_type": "expense",
+    "account_type": null,
+    "is_group": 1,
+    "balance_direction": "debit_normal"
+  },
+  {
+    "account_number": "4.2.5.01",
+    "name": "IPTU",
+    "parent_number": "4.2.5",
+    "root_type": "expense",
+    "account_type": "tax",
+    "is_group": 0,
+    "balance_direction": "debit_normal"
+  },
+  {
+    "account_number": "4.2.5.02",
+    "name": "IPVA",
+    "parent_number": "4.2.5",
+    "root_type": "expense",
+    "account_type": "tax",
+    "is_group": 0,
+    "balance_direction": "debit_normal"
+  },
+  {
+    "account_number": "4.2.5.03",
+    "name": "Taxas e Licenças",
+    "parent_number": "4.2.5",
+    "root_type": "expense",
+    "account_type": "tax",
+    "is_group": 0,
+    "balance_direction": "debit_normal"
+  },
+  {
+    "account_number": "4.2.5.04",
+    "name": "Multas Fiscais e Tributárias",
+    "parent_number": "4.2.5",
+    "root_type": "expense",
+    "account_type": "tax",
+    "is_group": 0,
+    "balance_direction": "debit_normal"
+  },
+  {
+    "account_number": "4.2.6",
+    "name": "Depreciação, Amortização e Exaustão",
+    "parent_number": "4.2",
+    "root_type": "expense",
+    "account_type": null,
+    "is_group": 1,
+    "balance_direction": "debit_normal"
+  },
+  {
+    "account_number": "4.2.6.01",
+    "name": "Despesa de Depreciação",
+    "parent_number": "4.2.6",
+    "root_type": "expense",
+    "account_type": "depreciation",
+    "is_group": 0,
+    "balance_direction": "debit_normal"
+  },
+  {
+    "account_number": "4.2.6.02",
+    "name": "Despesa de Amortização",
+    "parent_number": "4.2.6",
+    "root_type": "expense",
+    "account_type": "depreciation",
+    "is_group": 0,
+    "balance_direction": "debit_normal"
+  },
+  {
+    "account_number": "4.2.6.03",
+    "name": "Despesa de Exaustão",
+    "parent_number": "4.2.6",
+    "root_type": "expense",
+    "account_type": "depreciation",
+    "is_group": 0,
+    "balance_direction": "debit_normal"
+  },
+  {
+    "account_number": "4.2.7",
+    "name": "Outras Despesas Operacionais",
+    "parent_number": "4.2",
+    "root_type": "expense",
+    "account_type": null,
+    "is_group": 1,
+    "balance_direction": "debit_normal"
+  },
+  {
+    "account_number": "4.2.7.01",
+    "name": "Despesas com Viagens e Hospedagem",
+    "parent_number": "4.2.7",
+    "root_type": "expense",
+    "account_type": "expense",
+    "is_group": 0,
+    "balance_direction": "debit_normal"
+  },
+  {
+    "account_number": "4.2.7.02",
+    "name": "Seguros",
+    "parent_number": "4.2.7",
+    "root_type": "expense",
+    "account_type": "expense",
+    "is_group": 0,
+    "balance_direction": "debit_normal"
+  },
+  {
+    "account_number": "4.2.7.03",
+    "name": "Manutenção e Conservação",
+    "parent_number": "4.2.7",
+    "root_type": "expense",
+    "account_type": "expense",
+    "is_group": 0,
+    "balance_direction": "debit_normal"
+  },
+  {
+    "account_number": "4.2.7.04",
+    "name": "Despesas com Veículos",
+    "parent_number": "4.2.7",
+    "root_type": "expense",
+    "account_type": "expense",
+    "is_group": 0,
+    "balance_direction": "debit_normal"
+  },
+  {
+    "account_number": "4.3",
+    "name": "PERDAS E RESULTADOS NÃO OPERACIONAIS",
+    "parent_number": "4",
+    "root_type": "expense",
+    "account_type": null,
+    "is_group": 1,
+    "balance_direction": "debit_normal"
+  },
+  {
+    "account_number": "4.3.1.01",
+    "name": "Perda na Venda de Imobilizado",
+    "parent_number": "4.3",
+    "root_type": "expense",
+    "account_type": "expense",
+    "is_group": 0,
+    "balance_direction": "debit_normal"
+  },
+  {
+    "account_number": "4.3.1.02",
+    "name": "Perda na Venda de Investimentos",
+    "parent_number": "4.3",
+    "root_type": "expense",
+    "account_type": "expense",
+    "is_group": 0,
+    "balance_direction": "debit_normal"
+  },
+  {
+    "account_number": "4.3.1.03",
+    "name": "Resultado Negativo de Equivalência Patrimonial",
+    "parent_number": "4.3",
+    "root_type": "expense",
+    "account_type": "expense",
+    "is_group": 0,
+    "balance_direction": "debit_normal"
+  },
+  {
+    "account_number": "4.3.1.04",
+    "name": "Perdas por Impairment",
+    "parent_number": "4.3",
+    "root_type": "expense",
+    "account_type": "depreciation",
+    "is_group": 0,
+    "balance_direction": "debit_normal"
+  },
+  {
+    "account_number": "4.3.1.05",
+    "name": "Perdas com Contingências",
+    "parent_number": "4.3",
+    "root_type": "expense",
+    "account_type": "expense",
+    "is_group": 0,
+    "balance_direction": "debit_normal"
+  },
+  {
+    "account_number": "4.3.1.06",
+    "name": "Ajuste a Valor de Mercado - Estoques",
+    "parent_number": "4.3",
+    "root_type": "expense",
+    "account_type": "stock_adjustment",
+    "is_group": 0,
+    "balance_direction": "debit_normal"
+  },
+  {
+    "account_number": "9",
+    "name": "CONTAS DE ENCERRAMENTO DO EXERCÍCIO",
+    "parent_number": null,
+    "root_type": "expense",
+    "account_type": null,
+    "is_group": 1,
+    "balance_direction": "debit_normal"
+  },
+  {
+    "account_number": "9.1.0.01",
+    "name": "Apuração do Resultado do Exercício (ARE)",
+    "parent_number": "9",
+    "root_type": "expense",
+    "account_type": "temporary",
+    "is_group": 0,
+    "balance_direction": "debit_normal"
+  },
+  {
+    "account_number": "9.1.0.02",
+    "name": "Encerramento de Contas de Resultado",
+    "parent_number": "9",
+    "root_type": "expense",
+    "account_type": "temporary",
+    "is_group": 0,
+    "balance_direction": "debit_normal"
+  }
+]
