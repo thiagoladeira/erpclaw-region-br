@@ -95,6 +95,13 @@ def main():
     parser.add_argument("--uf")
     parser.add_argument("--tax-period-id")
     parser.add_argument("--regime")
+    parser.add_argument("--codigo-receita")
+    parser.add_argument("--uf-destino")
+    parser.add_argument("--valor-base")
+    parser.add_argument("--ncm-code")
+    parser.add_argument("--mva")
+    parser.add_argument("--municipio")
+    parser.add_argument("--cnae")
 
     # Fiscal catalog
     parser.add_argument("--cfop-id")

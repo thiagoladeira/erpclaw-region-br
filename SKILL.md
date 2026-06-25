@@ -1,10 +1,10 @@
 ---
 name: erpclaw-region-br
-version: 1.3.0
+version: 1.4.0
 description: >
   Brazilian tax compliance: ICMS/IPI/PIS/COFINS/ISS, NF-e inbound/outbound, SPED EFD ICMS/IPI,
   SPED EFD Contribuições, ECD, ECF, DIFAL, Simples Nacional, REPETRO, REINF, DCTFWeb.
-  83 actions across 9 domains.
+  86 actions across 9 domains.
 author: Morpheus / Thiago Ladeira
 source: https://github.com/avansaber/erpclaw-addons
 tier: 3
@@ -103,19 +103,22 @@ por tabelas com validação, constraints e integridade referencial.
 | `generate-bloco-m` | Gerar Bloco M (Apuração PIS/COFINS com créditos) |
 | `generate-bloco-p` | Gerar Bloco P (Apuração por Regime Tributário) |
 
-### Apuração Tributária BR — 12 ações
+### Apuração Tributária BR — 15 ações
 | Ação | Descrição |
 |------|-----------|
-| `calculate-icms` | Apurar ICMS (débito x crédito) por UF e período |
-| `calculate-icms-st` | Apurar ICMS Substituição Tributária |
-| `calculate-pis-cofins` | Apurar PIS/COFINS (não-cumulativo) |
-| `calculate-difal` | Calcular DIFAL interestadual |
-| `calculate-simples-nacional` | Calcular DAS do Simples Nacional |
+| `calculate-icms` | Apurar ICMS (débito x crédito) por UF/CST/CFOP |
+| `calculate-icms-st` | Apurar ICMS Substituição Tributária com MVA por UF/NCM |
+| `calculate-fecp` | Calcular FECP (Fundo de Combate à Pobreza) por UF |
+| `calculate-pis-cofins` | Apurar PIS/COFINS com análise CST (não-cumulativo/cumulativo) |
+| `calculate-difal` | Calcular DIFAL interestadual a partir de dados reais |
+| `calculate-simples-nacional` | Calcular DAS com tabelas progressivas Anexos I/II/III |
 | `calculate-irpj-csll` | Apurar IRPJ/CSLL (Lucro Real ou Presumido) |
 | `calculate-ciap` | Controlar CIAP (1/48 avos ICMS Ativo Permanente) |
-| `reconcile-tax-accounts` | Conciliar contas de impostos com apuração |
-| `generate-darf` | Gerar guia de recolhimento (valores) |
-| `generate-gnre` | Gerar GNRE (ICMS interestadual) |
+| `calculate-iss` | Apurar ISS municipal por código de município |
+| `calculate-withholding` | Calcular retenções na fonte (IR/PIS/COFINS/CSLL/INSS/ISS) |
+| `reconcile-tax-accounts` | Conciliar contas de impostos com GL |
+| `generate-darf` | Gerar guia DARF com códigos de receita |
+| `generate-gnre` | Gerar GNRE (ICMS interestadual + DIFAL) |
 | `list-tax-periods` | Listar períodos de apuração |
 | `close-tax-period` | Fechar período de apuração fiscal |
 
@@ -157,7 +160,7 @@ por tabelas com validação, constraints e integridade referencial.
 | `configure-repetro` | Configurar regime REPETRO |
 | `repetro-status` | Verificar status REPETRO (DI, vencimentos) |
 
-**Total: 83 ações**
+**Total: 86 ações**
 
 ## Segurança
 
@@ -190,7 +193,7 @@ Ou peça naturalmente: "Instalar módulo de localização brasileira"
 ```
 erpclaw-region-br/
 ├── SKILL.md              ← Este arquivo
-├── init_db.py            ← Schema de tabelas fiscais BR
+├── init_db.py            ← Schema de tabelas fiscais BR (20 tabelas: nfe, cfop, cst, ncm, tax_period, tax_apuration, sped_log, difal, nfe_out, company_fiscal, customer_fiscal, item_fiscal, mva_st_config, fecp_config, iss_config, withholding_config)
 ├── assets/
 │   └── charts/
 │       └── br_gaap.json  ← Plano de contas brasileiro (225 contas)

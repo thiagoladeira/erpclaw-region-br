@@ -584,6 +584,84 @@ def create_br_tables(db_path=None):
     conn.execute("CREATE INDEX IF NOT EXISTS idx_item_fiscal_company ON item_fiscal(company_id)")
 
     # ==================================================================
+    # TABLE 17: mva_st_config — MVA (Margem de Valor Agregado) for ICMS ST per UF/produto
+    # ==================================================================
+    conn.execute("""
+        CREATE TABLE IF NOT EXISTS mva_st_config (
+            id TEXT PRIMARY KEY,
+            uf TEXT NOT NULL,
+            ncm_prefix TEXT NOT NULL,
+            mva_original TEXT NOT NULL DEFAULT '0.00',
+            mva_padrao TEXT NOT NULL DEFAULT '0.00',
+            is_active INTEGER DEFAULT 1,
+            company_id TEXT NOT NULL REFERENCES company(id),
+            created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+            UNIQUE(uf, ncm_prefix, company_id)
+        )
+    """)
+    tables_created += 1
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_mva_st_uf ON mva_st_config(uf)")
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_mva_st_ncm ON mva_st_config(ncm_prefix)")
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_mva_st_company ON mva_st_config(company_id)")
+
+    # ==================================================================
+    # TABLE 18: fecp_config — FECP rates per UF
+    # ==================================================================
+    conn.execute("""
+        CREATE TABLE IF NOT EXISTS fecp_config (
+            id TEXT PRIMARY KEY,
+            uf TEXT NOT NULL UNIQUE,
+            aliquota TEXT NOT NULL DEFAULT '2.00',
+            is_active INTEGER DEFAULT 1,
+            company_id TEXT NOT NULL REFERENCES company(id),
+            created_at TEXT DEFAULT CURRENT_TIMESTAMP
+        )
+    """)
+    tables_created += 1
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_fecp_config_uf ON fecp_config(uf)")
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_fecp_config_company ON fecp_config(company_id)")
+
+    # ==================================================================
+    # TABLE 19: iss_config — ISS municipal rates
+    # ==================================================================
+    conn.execute("""
+        CREATE TABLE IF NOT EXISTS iss_config (
+            id TEXT PRIMARY KEY,
+            municipio_codigo TEXT NOT NULL,
+            municipio_nome TEXT NOT NULL,
+            uf TEXT NOT NULL,
+            aliquota TEXT NOT NULL DEFAULT '5.00',
+            cnae TEXT,
+            is_active INTEGER DEFAULT 1,
+            company_id TEXT NOT NULL REFERENCES company(id),
+            created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+            UNIQUE(municipio_codigo, cnae, company_id)
+        )
+    """)
+    tables_created += 1
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_iss_config_mun ON iss_config(municipio_codigo)")
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_iss_config_company ON iss_config(company_id)")
+
+    # ==================================================================
+    # TABLE 20: withholding_config — Tax withholding rates
+    # ==================================================================
+    conn.execute("""
+        CREATE TABLE IF NOT EXISTS withholding_config (
+            id TEXT PRIMARY KEY,
+            tributo TEXT NOT NULL CHECK(tributo IN ('ir','pis','cofins','csll','inss','iss')),
+            base_minima TEXT DEFAULT '0.00',
+            aliquota TEXT NOT NULL,
+            descricao TEXT,
+            is_active INTEGER DEFAULT 1,
+            company_id TEXT NOT NULL REFERENCES company(id),
+            created_at TEXT DEFAULT CURRENT_TIMESTAMP
+        )
+    """)
+    tables_created += 1
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_withholding_config_tributo ON withholding_config(tributo)")
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_withholding_config_company ON withholding_config(company_id)")
+
+    # ==================================================================
     # Seed tabelas de catálogo fiscal (CFOP, CST, NCM)
     # ==================================================================
     _seed_fiscal_catalogs(conn)
@@ -700,6 +778,38 @@ def _seed_fiscal_catalogs(conn):
         conn.execute(
             "INSERT OR IGNORE INTO ncm (id, codigo, descricao) VALUES (?, ?, ?)",
             (str(uuid4()), codigo, descricao)
+        )
+
+    # FECP rates for all 27 UFs
+    fecp_rates = [
+        ("SP", "2.00"), ("RJ", "4.00"), ("MG", "2.00"), ("ES", "2.00"),
+        ("RS", "2.00"), ("SC", "2.00"), ("PR", "2.00"), ("BA", "2.00"),
+        ("CE", "2.00"), ("PE", "2.00"), ("MA", "2.00"), ("PI", "2.00"),
+        ("PB", "2.00"), ("RN", "2.00"), ("AL", "2.00"), ("SE", "2.00"),
+        ("GO", "2.00"), ("MT", "2.00"), ("MS", "2.00"), ("DF", "2.00"),
+        ("AM", "2.00"), ("PA", "2.00"), ("RO", "2.00"), ("AC", "2.00"),
+        ("RR", "2.00"), ("AP", "2.00"), ("TO", "2.00"),
+    ]
+    # Use a dummy company_id for catalog seed (these are reference rates)
+    for uf, aliquota in fecp_rates:
+        conn.execute(
+            "INSERT OR IGNORE INTO fecp_config (id, uf, aliquota, company_id) VALUES (?, ?, ?, ?)",
+            (str(uuid4()), uf, aliquota, "*")
+        )
+
+    # Withholding defaults
+    withholding_defaults = [
+        ("ir", "10.00", "1.50", "IR retido na fonte — serviços (base reduzida 40%)"),
+        ("pis", "10.00", "0.65", "PIS retido na fonte — 4.65% composto"),
+        ("cofins", "10.00", "3.00", "COFINS retido na fonte — 4.65% composto"),
+        ("csll", "10.00", "1.00", "CSLL retida na fonte — 4.65% composto"),
+        ("inss", "10.00", "11.00", "INSS retido na fonte — serviços"),
+        ("iss", "10.00", "5.00", "ISS retido na fonte — padrão municipal"),
+    ]
+    for tributo, base_min, aliquota, descricao in withholding_defaults:
+        conn.execute(
+            "INSERT OR IGNORE INTO withholding_config (id, tributo, base_minima, aliquota, descricao, company_id) VALUES (?, ?, ?, ?, ?, ?)",
+            (str(uuid4()), tributo, base_min, aliquota, descricao, "*")
         )
 
 
