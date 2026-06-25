@@ -37,6 +37,7 @@ from tax_calc_br import ACTIONS as TAX_CALC_ACTIONS
 from fiscal_catalog import ACTIONS as FISCAL_CATALOG_ACTIONS
 from setup_br import ACTIONS as SETUP_ACTIONS
 from nfe_emission import ACTIONS as NFE_EMISSION_ACTIONS
+from fiscal_data import ACTIONS as FISCAL_DATA_ACTIONS
 
 # ---------------------------------------------------------------------------
 SKILL = "erpclaw-region-br"
@@ -50,6 +51,7 @@ ACTIONS.update(TAX_CALC_ACTIONS)
 ACTIONS.update(FISCAL_CATALOG_ACTIONS)
 ACTIONS.update(SETUP_ACTIONS)
 ACTIONS.update(NFE_EMISSION_ACTIONS)
+ACTIONS.update(FISCAL_DATA_ACTIONS)
 
 
 def main():
@@ -141,6 +143,50 @@ def main():
     # REPETRO
     parser.add_argument("--di-numero")
     parser.add_argument("--data-vencimento-di")
+
+    # Fiscal data (note: --cnpj, --regime-isencao, --cst-imposto, --cst-regime already defined above)
+    parser.add_argument("--cpf")
+    parser.add_argument("--inscricao-estadual")
+    parser.add_argument("--inscricao-municipal")
+    parser.add_argument("--inscricao-suframa")
+    parser.add_argument("--razao-social")
+    parser.add_argument("--nome-fantasia")
+    parser.add_argument("--cnae-principal")
+    parser.add_argument("--crt")
+    parser.add_argument("--logradouro")
+    parser.add_argument("--complemento")
+    parser.add_argument("--bairro")
+    parser.add_argument("--cep")
+    parser.add_argument("--municipio-codigo")
+    parser.add_argument("--municipio-nome")
+    parser.add_argument("--telefone")
+    parser.add_argument("--email")
+    parser.add_argument("--email-nfe")
+    parser.add_argument("--contribuinte-icms", type=int)
+    parser.add_argument("--cest")
+    parser.add_argument("--gtin")
+    parser.add_argument("--gtin-trib")
+    parser.add_argument("--origem")
+    parser.add_argument("--ex-tipi")
+    parser.add_argument("--cfop-saida-interna")
+    parser.add_argument("--cfop-saida-interestadual")
+    parser.add_argument("--cfop-saida-exterior")
+    parser.add_argument("--cfop-entrada-interna")
+    parser.add_argument("--cfop-entrada-interestadual")
+    parser.add_argument("--cfop-entrada-exterior")
+    parser.add_argument("--icms-cst")
+    parser.add_argument("--pis-cst")
+    parser.add_argument("--cofins-cst")
+    parser.add_argument("--ipi-cst")
+    parser.add_argument("--aliq-icms")
+    parser.add_argument("--aliq-icms-st")
+    parser.add_argument("--aliq-pis")
+    parser.add_argument("--aliq-cofins")
+    parser.add_argument("--aliq-ipi")
+    parser.add_argument("--aliq-iss")
+    parser.add_argument("--mva-st")
+    parser.add_argument("--reducao-base-icms")
+    parser.add_argument("--reducao-base-icms-st")
 
     # RBAC
     parser.add_argument("--user-confirmed", default="false")

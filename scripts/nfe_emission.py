@@ -433,7 +433,47 @@ def _next_numero(conn, cfg: dict) -> int:
 
 
 def _cf(conn, record_id: str, field_name: str, default: str = "") -> str:
-    """Fetch a custom field value."""
+    """Fetch a fiscal value from structured tables with custom_field_value fallback."""
+    # Try customer_fiscal table
+    if field_name in ("cnpj", "cpf", "ie", "isuf", "im", "email_nfe"):
+        row = conn.execute(
+            f"SELECT {field_name} FROM customer_fiscal WHERE customer_id = ?",
+            (record_id,)
+        ).fetchone()
+        if row and row[field_name]:
+            return row[field_name]
+
+    # Try item_fiscal table
+    if field_name in ("ncm", "cest", "cst_icms", "cst_pis", "cst_cofins",
+                      "cfop", "aliq_icms", "aliq_pis", "aliq_cofins", "aliq_ipi"):
+        col_map = {
+            "cst_icms": "icms_cst",
+            "cst_pis": "pis_cst",
+            "cst_cofins": "cofins_cst",
+            "cfop": "cfop_saida_interna",
+            "aliq_icms": "aliq_icms",
+            "aliq_pis": "aliq_pis",
+            "aliq_cofins": "aliq_cofins",
+            "aliq_ipi": "aliq_ipi",
+        }
+        col = col_map.get(field_name, field_name)
+        row = conn.execute(
+            f"SELECT {col} FROM item_fiscal WHERE item_id = ?",
+            (record_id,)
+        ).fetchone()
+        if row and row[col]:
+            return row[col]
+
+    # Try company_fiscal table
+    if field_name in ("cnpj", "ie", "im", "isuf"):
+        row = conn.execute(
+            f"SELECT {field_name} FROM company_fiscal WHERE company_id = ?",
+            (record_id,)
+        ).fetchone()
+        if row and row[field_name]:
+            return row[field_name]
+
+    # Fallback to custom_field_value for backward compatibility
     row = conn.execute(
         "SELECT cfv_value FROM custom_field_value WHERE record_id = ? AND field_name = ?",
         (record_id, field_name)
@@ -1175,12 +1215,20 @@ def inutilizar_numeracao(conn, args):
 
 
 def _get_company_cnpj(conn, company_id: str) -> str:
-    """Get company CNPJ from tax_id or custom fields."""
+    """Get company CNPJ from company_fiscal, company.tax_id, or custom fields."""
+    # Try structured table first
+    row = conn.execute(
+        "SELECT cnpj FROM company_fiscal WHERE company_id = ?", (company_id,)
+    ).fetchone()
+    if row and row["cnpj"]:
+        return row["cnpj"]
+    # Try company.tax_id
     row = conn.execute(
         "SELECT tax_id FROM company WHERE id = ?", (company_id,)
     ).fetchone()
     if row and row["tax_id"]:
         return row["tax_id"]
+    # Fallback to custom fields
     return _cf(conn, company_id, "cnpj", "00000000000000")
 
 

@@ -1,10 +1,10 @@
 ---
 name: erpclaw-region-br
-version: 1.1.0
+version: 1.2.0
 description: >
   Brazilian tax compliance: ICMS/IPI/PIS/COFINS/ISS, NF-e inbound/outbound, SPED EFD ICMS/IPI,
   SPED EFD Contribuições, ECD, ECF, DIFAL, Simples Nacional, REPETRO, REINF, DCTFWeb.
-  62 actions across 6 domains.
+  72 actions across 7 domains.
 author: Morpheus / Thiago Ladeira
 source: https://github.com/avansaber/erpclaw-addons
 tier: 3
@@ -61,6 +61,24 @@ REPETRO, e obrigações acessórias (EFD, ECD, ECF, REINF, DCTFWeb).
 | `sefaz-status-servico` | Verificar status dos serviços SEFAZ |
 | `generate-danfe-out` | Gerar DANFE para NF-e de saída |
 | `export-nfe-out-xml` | Exportar XML autorizado da NF-e |
+
+### Cadastros Fiscais Estruturados — 10 ações
+
+Tabelas estruturadas para dados fiscais brasileiros, substituindo `custom_field_value`
+por tabelas com validação, constraints e integridade referencial.
+
+| Ação | Descrição |
+|------|-----------|
+| `add-company-fiscal` | Cadastrar dados fiscais da empresa (CNPJ, IE, IM, CNAE, CRT) |
+| `get-company-fiscal` | Consultar dados fiscais da empresa |
+| `list-company-fiscal` | Listar empresas com dados fiscais cadastrados |
+| `add-customer-fiscal` | Cadastrar dados fiscais do cliente (CNPJ/CPF, IE, IM, ISUF) |
+| `get-customer-fiscal` | Consultar dados fiscais do cliente |
+| `list-customer-fiscal` | Listar clientes com dados fiscais (filtro por UF/empresa) |
+| `add-item-fiscal` | Cadastrar classificação fiscal do item (NCM, CEST, CFOP, CST, alíquotas) |
+| `get-item-fiscal` | Consultar classificação fiscal do item |
+| `list-item-fiscal` | Listar itens com classificação fiscal (filtro por NCM/empresa) |
+| `migrate-fiscal-data` | Migrar dados de custom_field_value para tabelas estruturadas |
 
 ### SPED Fiscal (EFD ICMS/IPI) — 6 ações
 | Ação | Descrição |
@@ -119,7 +137,7 @@ REPETRO, e obrigações acessórias (EFD, ECD, ECF, REINF, DCTFWeb).
 | `configure-repetro` | Configurar regime REPETRO |
 | `repetro-status` | Verificar status REPETRO (DI, vencimentos) |
 
-**Total: 62 ações**
+**Total: 72 ações**
 
 ## Segurança
 
@@ -136,6 +154,7 @@ REPETRO, e obrigações acessórias (EFD, ECD, ECF, REINF, DCTFWeb).
 - `lxml` (para parsing de XML NF-e)
 - `xmlschema` (opcional, para validação XSD)
 - `reportlab` (opcional, para geração de DANFE)
+- `cryptography` (para assinatura digital de XML NF-e)
 
 ## Instalação
 
@@ -162,6 +181,7 @@ erpclaw-region-br/
     ├── nfe_signer.py     ← Assinador digital XMLDSig (A1)
     ├── sefaz_ws.py       ← Cliente SOAP SEFAZ WebServices
     ├── nfe_emission.py   ← Orquestrador de emissão NF-e (17 ações)
+    ├── fiscal_data.py    ← Dados fiscais estruturados (10 ações)
     ├── sped_efd.py       ← Gerador EFD ICMS/IPI
     ├── sped_contrib.py   ← Gerador EFD Contribuições
     ├── tax_calc_br.py    ← Cálculos tributários BR

@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 """ERPClaw Region BR schema extension -- Brazilian fiscal tables.
 
-Adds 13 tables: nfe_import, nfe_item, cfop, cst_csosn, ncm, 
+Adds 16 tables: nfe_import, nfe_item, cfop, cst_csosn, ncm, 
 tax_period_br, tax_apuration, sped_export_log, difal_config,
-br_nfe_config, br_nfe_out, br_nfe_out_item, br_nfe_event.
+br_nfe_config, br_nfe_out, br_nfe_out_item, br_nfe_event,
+company_fiscal, customer_fiscal, item_fiscal.
 
 Prerequisite: ERPClaw init_db.py must have run first.
 Run: python3 init_db.py [db_path]
@@ -468,6 +469,119 @@ def create_br_tables(db_path=None):
     conn.execute("CREATE INDEX IF NOT EXISTS idx_nfe_event_tipo ON br_nfe_event(tipo_evento)")
     conn.execute("CREATE INDEX IF NOT EXISTS idx_nfe_event_status ON br_nfe_event(status)")
     conn.execute("CREATE INDEX IF NOT EXISTS idx_nfe_event_company ON br_nfe_event(company_id)")
+
+    # ==================================================================
+    # TABLE 14: company_fiscal — Brazilian tax identifiers for the company
+    # ==================================================================
+    conn.execute("""
+        CREATE TABLE IF NOT EXISTS company_fiscal (
+            id                  TEXT PRIMARY KEY,
+            company_id          TEXT NOT NULL UNIQUE REFERENCES company(id),
+            cnpj                TEXT NOT NULL UNIQUE,
+            inscricao_estadual  TEXT,
+            inscricao_municipal TEXT,
+            inscricao_suframa   TEXT,
+            razao_social        TEXT,
+            nome_fantasia       TEXT,
+            cnae_principal      TEXT,
+            crt                 TEXT DEFAULT '3' CHECK(crt IN ('1','2','3')),
+            regime_isencao      TEXT,
+            logradouro          TEXT,
+            numero              TEXT,
+            complemento         TEXT,
+            bairro              TEXT,
+            cep                 TEXT,
+            municipio_codigo    TEXT,
+            municipio_nome      TEXT,
+            uf                  TEXT,
+            telefone            TEXT,
+            email               TEXT,
+            created_at          TEXT DEFAULT CURRENT_TIMESTAMP,
+            updated_at          TEXT DEFAULT CURRENT_TIMESTAMP
+        )
+    """)
+    tables_created += 1
+
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_company_fiscal_cnpj ON company_fiscal(cnpj)")
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_company_fiscal_company ON company_fiscal(company_id)")
+
+    # ==================================================================
+    # TABLE 15: customer_fiscal — Brazilian tax identifiers for customers
+    # ==================================================================
+    conn.execute("""
+        CREATE TABLE IF NOT EXISTS customer_fiscal (
+            id                  TEXT PRIMARY KEY,
+            customer_id         TEXT NOT NULL UNIQUE REFERENCES customer(id),
+            cnpj                TEXT,
+            cpf                 TEXT,
+            ie                  TEXT,
+            isuf                TEXT,
+            im                  TEXT,
+            contribuinte_icms   INTEGER DEFAULT 1 CHECK(contribuinte_icms IN (0,1,2)),
+            crt                 TEXT DEFAULT '3' CHECK(crt IN ('1','2','3')),
+            logradouro          TEXT,
+            numero              TEXT,
+            complemento         TEXT,
+            bairro              TEXT,
+            cep                 TEXT,
+            municipio_codigo    TEXT,
+            municipio_nome      TEXT,
+            uf                  TEXT,
+            telefone            TEXT,
+            email_nfe           TEXT,
+            created_at          TEXT DEFAULT CURRENT_TIMESTAMP,
+            updated_at          TEXT DEFAULT CURRENT_TIMESTAMP,
+            CHECK(cnpj IS NOT NULL OR cpf IS NOT NULL)
+        )
+    """)
+    tables_created += 1
+
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_customer_fiscal_cnpj ON customer_fiscal(cnpj)")
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_customer_fiscal_cpf ON customer_fiscal(cpf)")
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_customer_fiscal_customer ON customer_fiscal(customer_id)")
+
+    # ==================================================================
+    # TABLE 16: item_fiscal — Brazilian tax classification for items
+    # ==================================================================
+    conn.execute("""
+        CREATE TABLE IF NOT EXISTS item_fiscal (
+            id                  TEXT PRIMARY KEY,
+            item_id             TEXT NOT NULL UNIQUE REFERENCES item(id),
+            ncm                 TEXT,
+            cest                TEXT,
+            gtin                TEXT,
+            gtin_trib           TEXT,
+            origem              TEXT DEFAULT '0' CHECK(origem IN ('0','1','2','3','4','5','6','7','8')),
+            ex_tipi             TEXT,
+            cfop_saida_interna          TEXT,
+            cfop_saida_interestadual    TEXT,
+            cfop_saida_exterior         TEXT,
+            cfop_entrada_interna        TEXT,
+            cfop_entrada_interestadual  TEXT,
+            cfop_entrada_exterior       TEXT,
+            icms_cst            TEXT,
+            pis_cst             TEXT,
+            cofins_cst          TEXT,
+            ipi_cst             TEXT,
+            aliq_icms           TEXT DEFAULT '18.00',
+            aliq_icms_st        TEXT DEFAULT '0.00',
+            aliq_pis            TEXT DEFAULT '1.65',
+            aliq_cofins         TEXT DEFAULT '7.60',
+            aliq_ipi            TEXT DEFAULT '0.00',
+            aliq_iss            TEXT DEFAULT '0.00',
+            mva_st              TEXT DEFAULT '0.00',
+            reducao_base_icms   TEXT DEFAULT '0.00',
+            reducao_base_icms_st TEXT DEFAULT '0.00',
+            company_id          TEXT NOT NULL REFERENCES company(id),
+            created_at          TEXT DEFAULT CURRENT_TIMESTAMP,
+            updated_at          TEXT DEFAULT CURRENT_TIMESTAMP
+        )
+    """)
+    tables_created += 1
+
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_item_fiscal_ncm ON item_fiscal(ncm)")
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_item_fiscal_item ON item_fiscal(item_id)")
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_item_fiscal_company ON item_fiscal(company_id)")
 
     # ==================================================================
     # Seed tabelas de catálogo fiscal (CFOP, CST, NCM)
