@@ -40,7 +40,8 @@ from erpclaw_lib.db import get_connection, DEFAULT_DB_PATH
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, SCRIPT_DIR)
 
-from nfe_xml_gen import _clean_cnpj, codigo_uf, _calc_dv_mod11
+from nfe_xml_gen import _clean_cnpj, _codigo_uf, _calc_dv_mod11
+codigo_uf = _codigo_uf
 from nfe_signer import sign_nfe_event_xml, validate_certificate
 
 # Try optional deps
