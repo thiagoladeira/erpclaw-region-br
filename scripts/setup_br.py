@@ -182,18 +182,69 @@ def br_setup(conn, args):
 
 
 def configure_repetro(conn, args):
-    """Configure REPETRO regime."""
+    """Configure REPETRO regime for a company — register DIs and track equipment.
+
+    REPETRO is the special customs regime for O&G equipment under temporary admission:
+    - Suspends II (import tax), IPI, PIS/COFINS on temporary import
+    - Equipment must be exported after the contract period
+    - Requires DI (Declaração de Importação) and RE (Registro de Exportação)
+
+    Args:
+        --company-id: Company registering for REPETRO
+        --di-numero: DI number (format: NN/NNNNNNN-N)
+        --di-data: DI date (YYYY-MM-DD)
+        --di-vencimento: DI expiry date (YYYY-MM-DD)
+        --cnpj-beneficiario: CNPJ of the beneficiary (defaults to company CNPJ)
+        --uf-despacho: UF where goods are dispatched
+    """
     company_id = args.company_id
     if not company_id:
         return err("--company-id obrigatório")
 
     di_numero = args.di_numero or ""
-    data_venc = args.data_vencimento_di or ""
+    di_data = getattr(args, 'di_data', None) or datetime.now().isoformat()[:10]
+    data_venc = args.data_vencimento_di or args.di_vencimento or ""
+    uf_despacho = args.uf_despacho or args.uf or ""
+
+    # Get CNPJ from company fiscal data
+    fiscal = conn.execute(
+        "SELECT cnpj FROM company_fiscal WHERE company_id = ?",
+        (company_id,)
+    ).fetchone()
+
+    cnpj_benef = args.cnpj_beneficiario or (fiscal[0] if fiscal else "")
+    cnpj_benef = cnpj_benef.replace(".", "").replace("/", "").replace("-", "")[:14]
+
+    # Validate DI format (NN/NNNNNNN-N)
+    import re
+    di_valid = re.match(r'^\d{2}/\d{7}-\d$', di_numero) if di_numero else False
+
+    # Register DI
+    di_id = str(uuid4())
+    try:
+        conn.execute("""
+            INSERT INTO repetro_di (id, di_numero, di_data, di_vencimento, cnpj_beneficiario,
+                                     uf_despacho, status, observacoes, company_id)
+            VALUES (?, ?, ?, ?, ?, ?, 'ativo', ?, ?)
+        """, (di_id, di_numero, di_data, data_venc, cnpj_benef, uf_despacho,
+               f"Regime REPETRO — {di_data}" if di_numero else "", company_id))
+        conn.commit()
+    except Exception as e:
+        return err(f"Erro ao registrar DI: {e}")
 
     return ok({
         "repetro": "configurado",
+        "di_id": di_id,
         "di_numero": di_numero,
-        "data_vencimento": data_venc,
+        "di_data": di_data,
+        "di_vencimento": data_venc,
+        "cnpj_beneficiario": cnpj_benef,
+        "uf_despacho": uf_despacho,
+        "formato_di_valido": di_valid if di_numero else None,
+        "alertas": [
+            "Verificar prazo de exportação conforme contrato",
+            "Manter inventário de equipamentos atualizado",
+        ] if di_numero else [],
         "contas": [
             "1.1.6 - Estoques sob REPETRO",
             "1.1.4.09 - ICMS REPETRO a Recuperar",
@@ -207,29 +258,361 @@ def configure_repetro(conn, args):
             "Importação REPETRO (Suspensão Total)",
             "Exportação REPETRO (Suspensão Total)",
         ],
-        "materias_primas": ["MP-001", "MP-002", "MP-003", "MP-004"],
     })
 
 
 def repetro_status(conn, args):
-    """Check REPETRO status."""
+    """Check REPETRO status — list all DIs with expiry dates and equipment count.
+
+    Returns all DIs, their expiry dates, equipment count under regime,
+    and flags any DI about to expire (< 90 days).
+
+    Args:
+        --company-id: Company to check
+    """
     company_id = args.company_id
     if not company_id:
         return err("--company-id obrigatório")
 
+    today = datetime.now().date()
+
+    # Get all DIs
+    dis = conn.execute("""
+        SELECT id, di_numero, di_data, di_vencimento, cnpj_beneficiario,
+               uf_despacho, status, observacoes
+        FROM repetro_di
+        WHERE company_id = ?
+        ORDER BY di_data DESC
+    """, (company_id,)).fetchall()
+
+    dis_list = []
+    alertas = []
+    equipamento_count = 0
+    dis_proximas_vencer = 0
+
+    for di in dis:
+        di_id = di[0]
+        di_venc_str = di[3] or ""
+
+        # Count equipment for this DI
+        eq_count = conn.execute(
+            "SELECT COUNT(*) FROM repetro_equipment WHERE repetro_di_id = ?",
+            (di_id,)
+        ).fetchone()[0]
+        equipamento_count += eq_count
+
+        # Calculate days remaining
+        dias_restantes = None
+        if di_venc_str:
+            try:
+                dt_venc = datetime.strptime(di_venc_str, "%Y-%m-%d").date()
+                dias_restantes = (dt_venc - today).days
+                if dias_restantes < 0:
+                    dias_restantes = dias_restantes  # negative = expired
+            except ValueError:
+                pass
+
+        # Flag DIs about to expire
+        if dias_restantes is not None and 0 <= dias_restantes < 90:
+            dis_proximas_vencer += 1
+            alertas.append({
+                "di_numero": di[1],
+                "di_vencimento": di_venc_str,
+                "dias_restantes": dias_restantes,
+                "alerta": f"Vence em {dias_restantes} dias!",
+            })
+
+        dis_list.append({
+            "di_id": di_id,
+            "di_numero": di[1],
+            "di_data": di[2],
+            "di_vencimento": di_venc_str,
+            "cnpj_beneficiario": di[4],
+            "uf_despacho": di[5],
+            "status": di[6],
+            "equipamentos": eq_count,
+            "dias_restantes": dias_restantes if dias_restantes is not None else "N/A",
+        })
+
+    # Get all equipment under active regime
+    equipment = conn.execute("""
+        SELECT re.id, re.descricao, re.ncm, re.quantidade, re.valor_unitario,
+               re.data_entrada, re.data_saida, re.status,
+               rd.di_numero
+        FROM repetro_equipment re
+        JOIN repetro_di rd ON re.repetro_di_id = rd.id
+        WHERE re.company_id = ?
+        ORDER BY re.data_entrada DESC
+        LIMIT 100
+    """, (company_id,)).fetchall()
+
+    eq_list = []
+    for eq in equipment:
+        eq_list.append({
+            "equipment_id": eq[0],
+            "descricao": eq[1],
+            "ncm": eq[2],
+            "quantidade": eq[3],
+            "valor_unitario": eq[4],
+            "data_entrada": eq[5],
+            "data_saida": eq[6],
+            "status": eq[7],
+            "di_numero": eq[8],
+        })
+
     return ok({
-        "repetro_ativos": 4,
-        "materias_primas": [
-            {"codigo": "MP-001", "descricao": "Aço Liga API 6A - Barra 2pol", "repetro": True},
-            {"codigo": "MP-002", "descricao": "Aço Liga API 6D - Chapa 4pol", "repetro": True},
-            {"codigo": "MP-003", "descricao": "Anel de Vedação NBR 2pol", "repetro": True},
-            {"codigo": "MP-004", "descricao": "Parafusos Alta Pressão M16", "repetro": True},
-        ],
-        "dis": [
-            {"numero": "24/1234567-8", "vencimento": "01/2027", "dias_restantes": "~210"},
-            {"numero": "24/2345678-9", "vencimento": "02/2027", "dias_restantes": "~240"},
-        ],
-        "alerta": "Nenhum vencimento próximo (< 90 dias)",
+        "repetro_ativo": len(dis_list) > 0,
+        "total_dis": len(dis_list),
+        "total_equipamentos": equipamento_count,
+        "equipamentos_ativos": sum(1 for e in eq_list if e["status"] == "ativo"),
+        "dis_proximas_vencer": dis_proximas_vencer,
+        "dis": dis_list,
+        "equipamentos": eq_list,
+        "alertas": alertas if alertas else "Nenhum vencimento próximo (< 90 dias)",
+        "message": ("ALERTA: Existem DIs prestes a vencer!" if alertas
+                    else "Todos os DIs estão em situação regular."),
+    })
+
+
+def register_repetro_equipment(conn, args):
+    """Register equipment under a REPETRO DI.
+
+    Links items to a specific DI and tracks entrance/exit dates.
+
+    Args:
+        --company-id: Company
+        --di-id: REPETRO DI ID to link equipment to
+        --item-id: Item ID from ERP
+        --equipamento-descricao: Equipment description
+        --ncm-code: NCM code
+        --quantidade: Quantity (text decimal)
+        --valor-unitario: Unit value (text decimal)
+        --data-entrada: Entry date (YYYY-MM-DD)
+        --data-saida: Exit date (YYYY-MM-DD, optional)
+    """
+    company_id = args.company_id
+    if not company_id:
+        return err("--company-id obrigatório")
+
+    di_id = args.di_id
+    if not di_id:
+        return err("--di-id obrigatório — ID da DI REPETRO")
+
+    # Validate DI exists
+    di = conn.execute(
+        "SELECT id, di_numero, status FROM repetro_di WHERE id = ? AND company_id = ?",
+        (di_id, company_id)
+    ).fetchone()
+    if not di:
+        return err(f"DI REPETRO não encontrada: {di_id}")
+
+    if di[2] == 'vencido' or di[2] == 'encerrado':
+        return err(f"DI {di[1]} está {di[2]} — não é possível registrar equipamentos")
+
+    item_id = args.item_id or ""
+    descricao = args.equipamento_descricao or ""
+    ncm = args.ncm_code or args.ncm_codigo or ""
+
+    # If item_id is provided, get description from item
+    if item_id and not descricao:
+        item = conn.execute(
+            "SELECT item_name FROM item WHERE id = ?", (item_id,)
+        ).fetchone()
+        if item:
+            descricao = item[0] or ""
+
+    # Get NCM from item_fiscal if not provided
+    if item_id and not ncm:
+        ifsc = conn.execute(
+            "SELECT ncm FROM item_fiscal WHERE item_id = ?", (item_id,)
+        ).fetchone()
+        if ifsc:
+            ncm = ifsc[0] or ""
+
+    quantidade = getattr(args, 'quantidade', '1') or '1'
+    valor_unitario = getattr(args, 'valor_unitario', '0.00') or '0.00'
+    data_entrada = args.data_entrada or datetime.now().isoformat()[:10]
+    data_saida = args.data_saida or None
+
+    status_eq = "exportado" if data_saida else "ativo"
+
+    eq_id = str(uuid4())
+    try:
+        conn.execute("""
+            INSERT INTO repetro_equipment (id, repetro_di_id, item_id, descricao, ncm,
+                                            quantidade, valor_unitario, data_entrada,
+                                            data_saida, status, company_id)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """, (eq_id, di_id, item_id, descricao, ncm, quantidade, valor_unitario,
+               data_entrada, data_saida, status_eq, company_id))
+        conn.commit()
+    except Exception as e:
+        return err(f"Erro ao registrar equipamento: {e}")
+
+    return ok({
+        "equipment_id": eq_id,
+        "repetro_di_id": di_id,
+        "di_numero": di[1],
+        "item_id": item_id,
+        "descricao": descricao,
+        "ncm": ncm,
+        "quantidade": quantidade,
+        "valor_unitario": valor_unitario,
+        "data_entrada": data_entrada,
+        "data_saida": data_saida,
+        "status": status_eq,
+    })
+
+
+def repetro_expiry_report(conn, args):
+    """Report of DIs about to expire.
+
+    Lists all DIs nearing expiry (within --dias threshold, default 90).
+
+    Args:
+        --company-id: Company
+        --dias: Days threshold (default 90)
+    """
+    company_id = args.company_id
+    if not company_id:
+        return err("--company-id obrigatório")
+
+    dias_limite = int(getattr(args, 'dias', '90') or 90)
+    today = datetime.now().date()
+    cutoff = today + datetime.timedelta(days=dias_limite)
+
+    dis = conn.execute("""
+        SELECT id, di_numero, di_data, di_vencimento, cnpj_beneficiario,
+               uf_despacho, status
+        FROM repetro_di
+        WHERE company_id = ?
+          AND status IN ('ativo', 'prorrogado')
+          AND di_vencimento IS NOT NULL AND di_vencimento != ''
+        ORDER BY di_vencimento
+    """, (company_id,)).fetchall()
+
+    proximos_venc = []
+    vencidos = []
+
+    for di in dis:
+        try:
+            dt_venc = datetime.strptime(di[3], "%Y-%m-%d").date()
+            dias_rest = (dt_venc - today).days
+        except ValueError:
+            continue
+
+        di_info = {
+            "di_id": di[0],
+            "di_numero": di[1],
+            "di_data": di[2],
+            "di_vencimento": di[3],
+            "cnpj_beneficiario": di[4],
+            "uf_despacho": di[5],
+            "status": di[6],
+            "dias_restantes": dias_rest,
+        }
+
+        if dias_rest < 0:
+            vencidos.append(di_info)
+        elif dias_rest <= dias_limite:
+            proximos_venc.append(di_info)
+
+    # Get equipment for expiring DIs
+    for item in proximos_venc + vencidos:
+        eqs = conn.execute("""
+            SELECT id, descricao, ncm, quantidade, valor_unitario, status
+            FROM repetro_equipment
+            WHERE repetro_di_id = ? AND status = 'ativo'
+        """, (item["di_id"],)).fetchall()
+        item["equipamentos_afetados"] = [
+            {"id": e[0], "descricao": e[1], "ncm": e[2],
+             "quantidade": e[3], "valor": e[4], "status": e[5]}
+            for e in eqs
+        ]
+
+    return ok({
+        "company_id": company_id,
+        "threshold_dias": dias_limite,
+        "data_referencia": today.isoformat(),
+        "dis_vencidas": len(vencidos),
+        "dis_proximas_vencer": len(proximos_venc),
+        "vencidos": vencidos,
+        "proximos_vencer": proximos_venc,
+        "alerta": "URGENTE: DIs vencidas requerem ação imediata!" if vencidos
+                  else ("ATENÇÃO: DIs próximas do vencimento" if proximos_venc
+                        else "Nenhum vencimento próximo."),
+    })
+
+
+def repetro_inventory(conn, args):
+    """Current equipment inventory under REPETRO regime.
+
+    Lists all equipment still under the special customs regime,
+    grouped by DI, with total values.
+
+    Args:
+        --company-id: Company
+        --status: Filter by equipment status (ativo, exportado, transferido, baixado)
+    """
+    company_id = args.company_id
+    if not company_id:
+        return err("--company-id obrigatório")
+
+    status_filter = args.status or None
+
+    where = "WHERE re.company_id = ?"
+    params = [company_id]
+    if status_filter:
+        where += " AND re.status = ?"
+        params.append(status_filter)
+
+    equipment = conn.execute(f"""
+        SELECT re.id, re.item_id, re.descricao, re.ncm, re.quantidade,
+               re.valor_unitario, re.data_entrada, re.data_saida, re.status,
+               rd.di_numero, rd.di_vencimento
+        FROM repetro_equipment re
+        JOIN repetro_di rd ON re.repetro_di_id = rd.id
+        {where}
+        ORDER BY re.status, re.data_entrada DESC
+        LIMIT 200
+    """, params).fetchall()
+
+    # Group by DI
+    grouped = {}
+    total_valor = 0.0
+    for eq in equipment:
+        di = eq[9]
+        if di not in grouped:
+            grouped[di] = {
+                "di_numero": di,
+                "di_vencimento": eq[10],
+                "equipamentos": [],
+                "subtotal_valor": 0.0,
+            }
+
+        val = float(eq[4] or 1) * float(eq[5] or 0)
+        eq_data = {
+            "equipment_id": eq[0],
+            "item_id": eq[1],
+            "descricao": eq[2],
+            "ncm": eq[3],
+            "quantidade": eq[4],
+            "valor_unitario": eq[5],
+            "data_entrada": eq[6],
+            "data_saida": eq[7],
+            "status": eq[8],
+            "valor_total": f"{val:.2f}",
+        }
+        grouped[di]["equipamentos"].append(eq_data)
+        grouped[di]["subtotal_valor"] += val
+        total_valor += val
+
+    return ok({
+        "company_id": company_id,
+        "total_equipamentos": len(equipment),
+        "total_dis": len(grouped),
+        "valor_total_em_regime": f"{total_valor:.2f}",
+        "por_di": [grouped[k] for k in sorted(grouped.keys())],
     })
 
 
@@ -255,4 +638,7 @@ ACTIONS = {
     }),
     "configure-repetro": configure_repetro,
     "repetro-status": repetro_status,
+    "register-repetro-equipment": register_repetro_equipment,
+    "repetro-expiry-report": repetro_expiry_report,
+    "repetro-inventory": repetro_inventory,
 }

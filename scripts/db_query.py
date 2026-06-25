@@ -40,6 +40,10 @@ from nfe_emission import ACTIONS as NFE_EMISSION_ACTIONS
 from fiscal_data import ACTIONS as FISCAL_DATA_ACTIONS
 from dctfweb import ACTIONS as DCTFWEB_ACTIONS
 from reinf import ACTIONS as REINF_ACTIONS
+from nfse import ACTIONS as NFSE_ACTIONS
+from nfe_avancada import ACTIONS as NFE_AVANCADA_ACTIONS
+from ecd import ACTIONS as ECD_ACTIONS
+from ecf import ACTIONS as ECF_ACTIONS
 
 # ---------------------------------------------------------------------------
 SKILL = "erpclaw-region-br"
@@ -56,6 +60,10 @@ ACTIONS.update(NFE_EMISSION_ACTIONS)
 ACTIONS.update(FISCAL_DATA_ACTIONS)
 ACTIONS.update(DCTFWEB_ACTIONS)
 ACTIONS.update(REINF_ACTIONS)
+ACTIONS.update(NFSE_ACTIONS)
+ACTIONS.update(NFE_AVANCADA_ACTIONS)
+ACTIONS.update(ECD_ACTIONS)
+ACTIONS.update(ECF_ACTIONS)
 
 
 def main():
@@ -158,6 +166,34 @@ def main():
     # REPETRO
     parser.add_argument("--di-numero")
     parser.add_argument("--data-vencimento-di")
+
+    # NFS-e
+    parser.add_argument("--rps-numero", type=int)
+    parser.add_argument("--discriminacao")
+    parser.add_argument("--codigo-servico")
+    parser.add_argument("--retencao-iss", type=int)
+    parser.add_argument("--nfse-id")
+    parser.add_argument("--aliquota-iss")
+
+    # NF-e Avançada
+    parser.add_argument("--tipo-manifestacao")
+    parser.add_argument("--nfe-complementar-id")
+    parser.add_argument("--di-data")
+    parser.add_argument("--di-id")
+    parser.add_argument("--di-data")
+    parser.add_argument("--di-vencimento")
+    parser.add_argument("--cnpj-beneficiario")
+    parser.add_argument("--uf-despacho")
+    parser.add_argument("--equipamento-descricao")
+    parser.add_argument("--data-entrada")
+    parser.add_argument("--data-saida")
+    parser.add_argument("--dias", type=int)
+
+    # ECD/ECF
+    parser.add_argument("--formato-saida")
+    parser.add_argument("--bloco")
+    parser.add_argument("--skip-validation", default="false")
+    parser.add_argument("--only-block")
 
     # Fiscal data (note: --cnpj, --regime-isencao, --cst-imposto, --cst-regime already defined above)
     parser.add_argument("--cpf")

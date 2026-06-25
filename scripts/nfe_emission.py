@@ -1505,6 +1505,8 @@ def sefaz_status_servico(conn, args):
 def generate_danfe_out(conn, args):
     """Generate DANFE (visual representation) for an outbound NF-e.
 
+    Tries PDF generation (weasyprint > reportlab) with HTML fallback.
+
     Args: --nfe-out-id, --output-path (optional)
     """
     nfe_id = args.nfe_out_id
@@ -1519,24 +1521,28 @@ def generate_danfe_out(conn, args):
 
     # Use signed XML if available, otherwise unsigned
     xml_content = nfe.get("xml_signed") or nfe.get("xml_nfe")
-    if not xml_content:
-        return err("NF-e has no XML content")
-
-    # Try to generate DANFE HTML
-    danfe_html = _generate_danfe_html(nfe, xml_content)
 
     # Determine output path
     output_path = args.output_path or args.danfe_output
     if not output_path:
         output_dir = os.path.expanduser("~/.openclaw/erpclaw/nfe/danfe")
         os.makedirs(output_dir, exist_ok=True)
-        output_path = os.path.join(
-            output_dir,
-            f"NFe-{nfe['chave_acesso']}.html"
-        )
+        output_path = os.path.join(output_dir, f"DANFE-NFe-{nfe['numero']}.pdf")
 
-    with open(output_path, "w", encoding="utf-8") as f:
-        f.write(danfe_html)
+    # Try PDF generation first
+    pdf_ok = False
+    result_format = "html"
+    if output_path.endswith(".pdf"):
+        pdf_ok = _generate_danfe_pdf(nfe, output_path)
+        if pdf_ok:
+            result_format = "pdf"
+
+    if not pdf_ok:
+        danfe_html = _generate_danfe_html(nfe, xml_content or "")
+        if output_path.endswith(".pdf"):
+            output_path = output_path.replace(".pdf", ".html")
+        with open(output_path, "w", encoding="utf-8") as f:
+            f.write(danfe_html)
 
     # Update DB
     now = datetime.now().isoformat()
@@ -1550,8 +1556,102 @@ def generate_danfe_out(conn, args):
         "nfe_out_id": nfe_id,
         "chave_acesso": nfe["chave_acesso"],
         "danfe_path": output_path,
-        "message": "DANFE generated",
+        "format": result_format,
+        "message": f"DANFE generated as {result_format.upper()}",
     })
+
+
+def _generate_danfe_pdf(nfe: dict, output_path: str) -> bool:
+    """Try to generate DANFE as PDF using weasyprint or reportlab.
+
+    Returns True if PDF was generated, False if HTML fallback should be used.
+    """
+    danfe_html = _generate_danfe_html(nfe, "")
+
+    # Try weasyprint first
+    try:
+        import weasyprint
+        weasyprint.HTML(string=danfe_html).write_pdf(output_path)
+        return True
+    except ImportError:
+        pass
+    except Exception:
+        pass
+
+    # Try reportlab as fallback
+    try:
+        from reportlab.lib.pagesizes import A4
+        from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
+        from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+        from reportlab.lib import colors
+        from reportlab.lib.units import mm
+
+        styles = getSampleStyleSheet()
+        doc = SimpleDocTemplate(output_path, pagesize=A4,
+                                leftMargin=10*mm, rightMargin=10*mm,
+                                topMargin=10*mm, bottomMargin=10*mm)
+        elements = []
+
+        title_style = ParagraphStyle("DANFE_Title", parent=styles["Title"],
+                                      fontSize=16, alignment=1, spaceAfter=4*mm)
+        elements.append(Paragraph("DANFE — Documento Auxiliar da NF-e", title_style))
+
+        nfe_num = str(nfe.get('numero', ''))
+        nfe_chave = str(nfe.get('chave_acesso', ''))
+        nfe_status = str(nfe.get('status', ''))
+
+        info_style = ParagraphStyle("Info", parent=styles["Normal"],
+                                     fontSize=9, alignment=1, spaceAfter=2*mm)
+        elements.append(Paragraph(
+            f"NF-e Nº {nfe_num} — Status: {nfe_status.upper()} — Emissão: {nfe.get('data_emissao', '')}",
+            info_style
+        ))
+
+        # Main table data
+        data = [
+            ["DANFE — Nota Fiscal Eletrônica", "", "", ""],
+            ["Chave de Acesso", nfe_chave, "", ""],
+            ["Natureza Operação", nfe.get('natureza_operacao', ''),
+             "Protocolo", nfe.get('protocolo', '—')],
+            ["Cliente", nfe.get('customer_name', ''),
+             "CNPJ", nfe.get('customer_cnpj', '')],
+            ["Valor Produtos", f"R$ {nfe.get('valor_produtos', '0.00')}",
+             "Valor ICMS", f"R$ {nfe.get('valor_icms', '0.00')}"],
+            ["Valor IPI", f"R$ {nfe.get('valor_ipi', '0.00')}",
+             "Valor PIS/COFINS",
+             f"R$ {str(Decimal(nfe.get('valor_pis', '0')) + Decimal(nfe.get('valor_cofins', '0')))}"],
+            ["Desconto", f"R$ {nfe.get('valor_desconto', '0.00')}",
+             "VALOR TOTAL", f"R$ {nfe.get('valor_total', '0.00')}"],
+        ]
+
+        table = Table(data, colWidths=[45*mm, 45*mm, 45*mm, 45*mm])
+        table.setStyle(TableStyle([
+            ("FONTNAME", (0, 0), (-1, -1), "Courier"),
+            ("FONTSIZE", (0, 0), (-1, -1), 8),
+            ("BACKGROUND", (0, 0), (-1, 0), colors.grey),
+            ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
+            ("SPAN", (0, 0), (-1, 0)),
+            ("SPAN", (1, 1), (-1, 1)),
+            ("GRID", (0, 0), (-1, -1), 0.5, colors.black),
+            ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+            ("TOPPADDING", (0, 0), (-1, -1), 4),
+            ("BOTTOMPADDING", (0, 0), (-1, -1), 4),
+        ]))
+        elements.append(table)
+        elements.append(Spacer(1, 5*mm))
+
+        footer_style = ParagraphStyle("Footer", parent=styles["Normal"],
+                                       fontSize=7, alignment=1)
+        elements.append(Paragraph("Documento gerado por ERPClaw Region BR — DANFE v1.5.0", footer_style))
+
+        doc.build(elements)
+        return True
+    except ImportError:
+        pass
+    except Exception:
+        pass
+
+    return False
 
 
 def _generate_danfe_html(nfe: dict, xml_content: str) -> str:

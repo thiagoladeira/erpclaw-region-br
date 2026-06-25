@@ -216,7 +216,21 @@ def generate_bloco_h(conn, args):
 
 
 def generate_bloco_k(conn, args):
-    """Generate Bloco K (Production and Stock Control)."""
+    """Generate Bloco K (Production and Stock Control) — Complete implementation.
+
+    K001: Block opening
+    K100: Production period
+    K200: Finished goods stock
+    K210: Consumption stock (raw materials)
+    K220: Other movements (transfers, adjustments)
+    K230: Finished products produced in period
+    K250: Products produced for own use
+    K255: Reprocessed/repaired products
+    K260: Reprocessing/repair materials
+    K990: Block closure
+
+    Data sources: stock_ledger_entry, stock_entry, work_order.
+    """
     company_id = args.company_id
     if not company_id:
         return err("--company-id obrigatório")
@@ -224,38 +238,234 @@ def generate_bloco_k(conn, args):
     mes = args.mes or datetime.now().month
 
     lines = []
-    lines.append(f"|K001|0|")
 
-    # Get stock movement for the month
+    # K001 — Abertura do Bloco K
+    # IND_MOV: 0 = sem dados, 1 = com dados
     start = f"{ano}-{mes:02d}-01"
-    
-    # K100 - Production period
-    lines.append(f"|K100|{start}|{start}|")
+    end_month = mes + 1 if mes < 12 else 1
+    end_year = ano if mes < 12 else ano + 1
+    end = f"{end_year}-{end_month:02d}-01"
 
-    # K200 - Stock write-off
-    stock_changes = conn.execute("""
-        SELECT sei.item_id, i.item_code, i.item_name, se.stock_entry_type, 
-               SUM(CAST(sei.qty AS REAL)) as total_qty, 
-               SUM(CAST(sei.qty AS REAL) * CAST(sei.rate AS REAL)) as total_value
+    # Check if there's any stock movement in the period
+    has_movement = conn.execute("""
+        SELECT COUNT(*) FROM stock_entry
+        WHERE company_id = ? AND posting_date >= ? AND posting_date < ?
+    """, (company_id, start, end)).fetchone()[0] > 0
+
+    lines.append(f"|K001|{1 if has_movement else 0}|")
+
+    if not has_movement:
+        lines.append(f"|K990|{len(lines) + 1}|")
+        return ok({
+            "bloco": "K",
+            "registros": len(lines),
+            "message": "Sem movimento de estoque no período",
+        })
+
+    # K100 — Período de Apuração do ICMS/IPI
+    dt_ini = start.replace("-", "")[:8]
+    dt_fin = end.replace("-", "")[:8]
+    # K100 fields: DT_INI, DT_FIN
+    lines.append(f"|K100|{dt_ini}|{dt_fin}|")
+
+    # K200 — Estoque Escriturado (Finished Goods Stock)
+    # Get stock ledger entries for finished products
+    stock_items = conn.execute("""
+        SELECT i.id, i.item_code, i.item_name, i.stock_uom,
+               COALESCE(SUM(CAST(sle.qty AS REAL)), 0) as final_qty,
+               COALESCE(SUM(CAST(sle.qty AS REAL) * CAST(sle.rate AS REAL)), 0) as final_value
+        FROM item i
+        LEFT JOIN stock_ledger_entry sle ON i.id = sle.item_id
+        WHERE i.item_type != 'service'
+          AND i.company_id = ?
+        GROUP BY i.id
+        HAVING final_qty > 0
+        LIMIT 200
+    """, (company_id,)).fetchall()
+
+    for si in stock_items:
+        # K200: COD_ITEM, DESCR_ITEM, COD_BARRA, UNID_INV, QTD, VALOR, COD_POSSIPI, IND_EST
+        lines.append(
+            f"|K200|{si[1]}|{si[2][:60] if si[2] else ''}|"
+            f"{si[3] or 'UN'}|{si[4]:.3f}|{si[5]:.2f}|00|0|"
+        )
+
+    # K210 — Estoque de Consumo (Raw Materials / Consumption Stock)
+    # Items that were consumed in production during the period
+    consumed = conn.execute("""
+        SELECT i.item_code, i.item_name, i.stock_uom,
+               COALESCE(SUM(ABS(CAST(sei.qty AS REAL))), 0) as consumed_qty,
+               COALESCE(SUM(ABS(CAST(sei.qty AS REAL)) * CAST(sei.rate AS REAL)), 0) as consumed_value
         FROM stock_entry_item sei
         JOIN stock_entry se ON sei.stock_entry_id = se.id
         JOIN item i ON sei.item_id = i.id
-        WHERE se.company_id = ? AND se.posting_date >= ?
-        GROUP BY sei.item_id, se.stock_entry_type
+        WHERE se.company_id = ?
+          AND se.posting_date >= ? AND se.posting_date < ?
+          AND CAST(sei.qty AS REAL) < 0
+        GROUP BY i.id
+        HAVING consumed_qty > 0
         LIMIT 100
-    """, (company_id, start)).fetchall()
+    """, (company_id, start, end)).fetchall()
 
-    for sc in stock_changes:
-        tipo = "01" if sc[3] == 'receive' else "02" if sc[3] in ('consume', 'issue') else "03"
+    for cm in consumed:
         lines.append(
-            f"|K200|{start}|{sc[1]}|{sc[2][:60]}|{tipo}|{sc[4]}|"
-            f"01|0|"
+            f"|K210|{cm[0]}|{cm[1][:60] if cm[1] else ''}|"
+            f"{cm[2] or 'UN'}|{cm[3]:.3f}|0|"
         )
+
+    # K220 — Outras Movimentações (transfers, adjustments)
+    # Stock adjustments (write-offs, corrections)
+    adjustments = conn.execute("""
+        SELECT i.item_code, i.item_name, i.stock_uom,
+               COALESCE(SUM(ABS(CAST(sei.qty AS REAL))), 0) as adj_qty,
+               se.stock_entry_type
+        FROM stock_entry_item sei
+        JOIN stock_entry se ON sei.stock_entry_id = se.id
+        JOIN item i ON sei.item_id = i.id
+        WHERE se.company_id = ?
+          AND se.posting_date >= ? AND se.posting_date < ?
+          AND se.stock_entry_type IN ('adjustment', 'transfer', 'repackage')
+        GROUP BY i.id, se.stock_entry_type
+        LIMIT 50
+    """, (company_id, start, end)).fetchall()
+
+    tipo_map = {
+        'adjustment': '01',  # Ajuste de inventário
+        'transfer': '02',    # Transferência entre estoques
+        'repackage': '03',   # Reembalagem
+        'write_off': '04',   # Baixa
+    }
+
+    for adj in adjustments:
+        tipo_mov = tipo_map.get(adj[4], '05')  # 05 = outros
+        lines.append(
+            f"|K220|{adj[0]}|{adj[1][:60] if adj[1] else ''}|"
+            f"{dt_ini}|{tipo_mov}|{adj[3]:.3f}|01|0|"
+        )
+
+    # K230 — Produtos Acabados Produzidos no Período
+    # Get finished goods from work orders or production entries
+    produced = conn.execute("""
+        SELECT i.item_code, i.item_name, i.stock_uom,
+               COALESCE(SUM(CAST(sei.qty AS REAL)), 0) as produced_qty,
+               COALESCE(SUM(CAST(sei.qty AS REAL) * CAST(sei.rate AS REAL)), 0) as produced_value
+        FROM stock_entry_item sei
+        JOIN stock_entry se ON sei.stock_entry_id = se.id
+        JOIN item i ON sei.item_id = i.id
+        WHERE se.company_id = ?
+          AND se.posting_date >= ? AND se.posting_date < ?
+          AND se.stock_entry_type IN ('manufacture', 'production', 'receive')
+          AND i.item_type = 'finished_good'
+          AND CAST(sei.qty AS REAL) > 0
+        GROUP BY i.id
+        LIMIT 100
+    """, (company_id, start, end)).fetchall()
+
+    if not produced:
+        produced = conn.execute("""
+            SELECT i.item_code, i.item_name, i.stock_uom,
+                   COALESCE(SUM(CAST(sei.qty AS REAL)), 0) as qty,
+                   COALESCE(SUM(CAST(sei.qty AS REAL) * CAST(sei.rate AS REAL)), 0) as value
+            FROM stock_entry_item sei
+            JOIN stock_entry se ON sei.stock_entry_id = se.id
+            JOIN item i ON sei.item_id = i.id
+            WHERE se.company_id = ?
+              AND se.posting_date >= ? AND se.posting_date < ?
+              AND se.stock_entry_type = 'manufacture'
+              AND CAST(sei.qty AS REAL) > 0
+            GROUP BY i.id
+            LIMIT 100
+        """, (company_id, start, end)).fetchall()
+
+    for prod in produced:
+        lines.append(
+            f"|K230|{prod[0]}|{prod[1][:60] if prod[1] else ''}|"
+            f"{prod[2] or 'UN'}|{prod[3]:.3f}|0|"
+            f"{prod[4] if len(prod) > 4 else '0'}|"
+            f"01|0|0||"
+        )
+
+    # K250 — Produtos Produzidos para Uso Próprio
+    own_use = conn.execute("""
+        SELECT i.item_code, i.item_name, i.stock_uom,
+               COALESCE(SUM(CAST(sei.qty AS REAL)), 0) as qty
+        FROM stock_entry_item sei
+        JOIN stock_entry se ON sei.stock_entry_id = se.id
+        JOIN item i ON sei.item_id = i.id
+        WHERE se.company_id = ?
+          AND se.posting_date >= ? AND se.posting_date < ?
+          AND se.stock_entry_type = 'manufacture'
+          AND (i.item_code LIKE 'MP-%' OR i.item_code LIKE 'PI-%'
+               OR i.item_code LIKE 'IN-%')
+          AND CAST(sei.qty AS REAL) > 0
+        GROUP BY i.id
+        LIMIT 50
+    """, (company_id, start, end)).fetchall()
+
+    for ou in own_use:
+        lines.append(
+            f"|K250|{ou[0]}|{ou[1][:60] if ou[1] else ''}|"
+            f"{ou[2] or 'UN'}|{ou[3]:.3f}|0|"
+            f"01|0|0||"
+        )
+
+    # K255 — Produtos Retrabalhados/Reparados
+    reworked = conn.execute("""
+        SELECT i.item_code, i.item_name, i.stock_uom,
+               COALESCE(SUM(CAST(sei.qty AS REAL)), 0) as qty
+        FROM stock_entry_item sei
+        JOIN stock_entry se ON sei.stock_entry_id = se.id
+        JOIN item i ON sei.item_id = i.id
+        WHERE se.company_id = ?
+          AND se.posting_date >= ? AND se.posting_date < ?
+          AND (se.name LIKE '%retrabalho%' OR se.name LIKE '%reparo%'
+               OR se.name LIKE '%reprocess%')
+          AND CAST(sei.qty AS REAL) > 0
+        GROUP BY i.id
+        LIMIT 50
+    """, (company_id, start, end)).fetchall()
+
+    for rw in reworked:
+        lines.append(
+            f"|K255|{rw[0]}|{rw[1][:60] if rw[1] else ''}|"
+            f"{rw[2] or 'UN'}|{rw[3]:.3f}|0|01|0|0||"
+        )
+
+    # K260 — Insumos Utilizados em Retrabalho/Reparo (Reprocessing materials)
+    rework_materials = conn.execute("""
+        SELECT i.item_code, i.item_name, i.stock_uom,
+               COALESCE(SUM(ABS(CAST(sei.qty AS REAL))), 0) as qty
+        FROM stock_entry_item sei
+        JOIN stock_entry se ON sei.stock_entry_id = se.id
+        JOIN item i ON sei.item_id = i.id
+        WHERE se.company_id = ?
+          AND se.posting_date >= ? AND se.posting_date < ?
+          AND (se.name LIKE '%retrabalho%' OR se.name LIKE '%reparo%'
+               OR se.name LIKE '%reprocess%')
+          AND CAST(sei.qty AS REAL) < 0
+        GROUP BY i.id
+        LIMIT 50
+    """, (company_id, start, end)).fetchall()
+
+    for rm in rework_materials:
+        lines.append(
+            f"|K260|{rm[0]}|{rm[1][:60] if rm[1] else ''}|"
+            f"{rm[2] or 'UN'}|{rm[3]:.3f}|"
+        )
+
+    # K990 — Encerramento do Bloco K
+    lines.append(f"|K990|{len(lines) + 1}|")
 
     content = "\n".join(lines) + "\n"
     return ok({
         "bloco": "K",
         "registros": len(lines),
+        "itens_estoque": len(stock_items),
+        "consumo": len(consumed),
+        "produzidos": len(produced),
+        "uso_proprio": len(own_use),
+        "retrabalhados": len(reworked),
+        "preview": "\n".join(lines[:5]) + ("\n..." if len(lines) > 5 else ""),
     })
 
 

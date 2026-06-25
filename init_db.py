@@ -1,10 +1,13 @@
 #!/usr/bin/env python3
 """ERPClaw Region BR schema extension -- Brazilian fiscal tables.
 
-Adds 16 tables: nfe_import, nfe_item, cfop, cst_csosn, ncm, 
+Adds 24 tables: nfe_import, nfe_item, cfop, cst_csosn, ncm, 
 tax_period_br, tax_apuration, sped_export_log, difal_config,
 br_nfe_config, br_nfe_out, br_nfe_out_item, br_nfe_event,
-company_fiscal, customer_fiscal, item_fiscal.
+company_fiscal, customer_fiscal, item_fiscal, mva_st_config,
+fecp_config, iss_config, withholding_config, repetro_di,
+repetro_equipment,
+br_nfse_config, br_nfse (NFS-e — service invoices).
 
 Prerequisite: ERPClaw init_db.py must have run first.
 Run: python3 init_db.py [db_path]
@@ -446,7 +449,7 @@ def create_br_tables(db_path=None):
             id                  TEXT PRIMARY KEY,
             nfe_out_id          TEXT NOT NULL,
             tipo_evento         TEXT NOT NULL
-                                CHECK(tipo_evento IN ('cancelamento','carta_correcao','manifestacao')),
+                                CHECK(tipo_evento IN ('cancelamento','carta_correcao','manifestacao','confirmacao','ciencia','desconhecimento','operacao_realizada')),
             numero_sequencial   INTEGER DEFAULT 1,
             justificativa       TEXT,
             xml_evento          TEXT,
@@ -471,7 +474,80 @@ def create_br_tables(db_path=None):
     conn.execute("CREATE INDEX IF NOT EXISTS idx_nfe_event_company ON br_nfe_event(company_id)")
 
     # ==================================================================
-    # TABLE 14: company_fiscal — Brazilian tax identifiers for the company
+    # TABLE 14: br_nfse_config — Configuração de emissão de NFS-e
+    # ==================================================================
+    conn.execute("""
+        CREATE TABLE IF NOT EXISTS br_nfse_config (
+            id TEXT PRIMARY KEY,
+            company_id TEXT NOT NULL UNIQUE REFERENCES company(id),
+            municipio_codigo TEXT NOT NULL,
+            municipio_nome TEXT NOT NULL,
+            uf TEXT NOT NULL,
+            aliquota_iss TEXT DEFAULT '5.00',
+            regime_tributacao TEXT DEFAULT 'normal',
+            ambiente TEXT DEFAULT 'homologacao',
+            certificado_path TEXT,
+            proximo_numero_rps INTEGER DEFAULT 1,
+            serie_rps TEXT DEFAULT '1',
+            created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+            updated_at TEXT DEFAULT CURRENT_TIMESTAMP
+        )
+    """)
+    tables_created += 1
+
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_nfse_cfg_company ON br_nfse_config(company_id)")
+
+    # ==================================================================
+    # TABLE 15: br_nfse — Nota Fiscal de Serviços Eletrônica
+    # ==================================================================
+    conn.execute("""
+        CREATE TABLE IF NOT EXISTS br_nfse (
+            id TEXT PRIMARY KEY,
+            numero_rps INTEGER NOT NULL,
+            numero_nfse TEXT,
+            codigo_verificacao TEXT,
+            data_emissao TEXT NOT NULL,
+            sales_invoice_id TEXT,
+            customer_id TEXT,
+            customer_name TEXT,
+            customer_cnpj TEXT,
+            customer_cpf TEXT,
+            customer_municipio TEXT,
+            discriminacao TEXT,
+            valor_servicos TEXT DEFAULT '0.00',
+            base_calculo TEXT DEFAULT '0.00',
+            aliquota_iss TEXT DEFAULT '5.00',
+            valor_iss TEXT DEFAULT '0.00',
+            valor_pis TEXT DEFAULT '0.00',
+            valor_cofins TEXT DEFAULT '0.00',
+            valor_ir TEXT DEFAULT '0.00',
+            valor_csll TEXT DEFAULT '0.00',
+            valor_inss TEXT DEFAULT '0.00',
+            retencao_iss INTEGER DEFAULT 0,
+            valor_liquido TEXT DEFAULT '0.00',
+            xml_rps TEXT,
+            xml_nfse TEXT,
+            xml_signed TEXT,
+            protocolo TEXT,
+            status TEXT DEFAULT 'rascunho'
+                CHECK(status IN ('rascunho','validado','assinado','enviado','autorizado','rejeitado','cancelado')),
+            motivo_status TEXT,
+            ambiente TEXT DEFAULT 'homologacao',
+            company_id TEXT NOT NULL REFERENCES company(id),
+            created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+            updated_at TEXT DEFAULT CURRENT_TIMESTAMP
+        )
+    """)
+    tables_created += 1
+
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_nfse_company ON br_nfse(company_id)")
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_nfse_rps ON br_nfse(numero_rps)")
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_nfse_status ON br_nfse(status)")
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_nfse_data ON br_nfse(data_emissao)")
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_nfse_si ON br_nfse(sales_invoice_id)")
+
+    # ==================================================================
+    # TABLE 16: company_fiscal — Brazilian tax identifiers for the company
     # ==================================================================
     conn.execute("""
         CREATE TABLE IF NOT EXISTS company_fiscal (
@@ -506,7 +582,7 @@ def create_br_tables(db_path=None):
     conn.execute("CREATE INDEX IF NOT EXISTS idx_company_fiscal_company ON company_fiscal(company_id)")
 
     # ==================================================================
-    # TABLE 15: customer_fiscal — Brazilian tax identifiers for customers
+    # TABLE 17: customer_fiscal — Brazilian tax identifiers for customers
     # ==================================================================
     conn.execute("""
         CREATE TABLE IF NOT EXISTS customer_fiscal (
@@ -541,7 +617,7 @@ def create_br_tables(db_path=None):
     conn.execute("CREATE INDEX IF NOT EXISTS idx_customer_fiscal_customer ON customer_fiscal(customer_id)")
 
     # ==================================================================
-    # TABLE 16: item_fiscal — Brazilian tax classification for items
+    # TABLE 18: item_fiscal — Brazilian tax classification for items
     # ==================================================================
     conn.execute("""
         CREATE TABLE IF NOT EXISTS item_fiscal (
@@ -584,7 +660,7 @@ def create_br_tables(db_path=None):
     conn.execute("CREATE INDEX IF NOT EXISTS idx_item_fiscal_company ON item_fiscal(company_id)")
 
     # ==================================================================
-    # TABLE 17: mva_st_config — MVA (Margem de Valor Agregado) for ICMS ST per UF/produto
+    # TABLE 19: mva_st_config — MVA (Margem de Valor Agregado) for ICMS ST per UF/produto
     # ==================================================================
     conn.execute("""
         CREATE TABLE IF NOT EXISTS mva_st_config (
@@ -605,7 +681,7 @@ def create_br_tables(db_path=None):
     conn.execute("CREATE INDEX IF NOT EXISTS idx_mva_st_company ON mva_st_config(company_id)")
 
     # ==================================================================
-    # TABLE 18: fecp_config — FECP rates per UF
+    # TABLE 20: fecp_config — FECP rates per UF
     # ==================================================================
     conn.execute("""
         CREATE TABLE IF NOT EXISTS fecp_config (
@@ -622,7 +698,7 @@ def create_br_tables(db_path=None):
     conn.execute("CREATE INDEX IF NOT EXISTS idx_fecp_config_company ON fecp_config(company_id)")
 
     # ==================================================================
-    # TABLE 19: iss_config — ISS municipal rates
+    # TABLE 21: iss_config — ISS municipal rates
     # ==================================================================
     conn.execute("""
         CREATE TABLE IF NOT EXISTS iss_config (
@@ -643,7 +719,7 @@ def create_br_tables(db_path=None):
     conn.execute("CREATE INDEX IF NOT EXISTS idx_iss_config_company ON iss_config(company_id)")
 
     # ==================================================================
-    # TABLE 20: withholding_config — Tax withholding rates
+    # TABLE 22: withholding_config — Tax withholding rates
     # ==================================================================
     conn.execute("""
         CREATE TABLE IF NOT EXISTS withholding_config (
@@ -662,12 +738,67 @@ def create_br_tables(db_path=None):
     conn.execute("CREATE INDEX IF NOT EXISTS idx_withholding_config_company ON withholding_config(company_id)")
 
     # ==================================================================
+    # TABLE 21: repetro_di — REPETRO Declaração de Importação
+    # ==================================================================
+    conn.execute("""
+        CREATE TABLE IF NOT EXISTS repetro_di (
+            id TEXT PRIMARY KEY,
+            di_numero TEXT NOT NULL,
+            di_data TEXT NOT NULL,
+            di_vencimento TEXT,
+            cnpj_beneficiario TEXT NOT NULL,
+            uf_despacho TEXT,
+            status TEXT DEFAULT 'ativo'
+                CHECK(status IN ('ativo','prorrogado','encerrado','vencido')),
+            observacoes TEXT,
+            company_id TEXT NOT NULL REFERENCES company(id),
+            created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+            updated_at TEXT DEFAULT CURRENT_TIMESTAMP
+        )
+    """)
+    tables_created += 1
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_repetro_di_numero ON repetro_di(di_numero)")
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_repetro_di_cnpj ON repetro_di(cnpj_beneficiario)")
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_repetro_di_status ON repetro_di(status)")
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_repetro_di_company ON repetro_di(company_id)")
+
+    # ==================================================================
+    # TABLE 22: repetro_equipment — REPETRO Equipment Tracking
+    # ==================================================================
+    conn.execute("""
+        CREATE TABLE IF NOT EXISTS repetro_equipment (
+            id TEXT PRIMARY KEY,
+            repetro_di_id TEXT NOT NULL REFERENCES repetro_di(id),
+            item_id TEXT REFERENCES item(id),
+            descricao TEXT NOT NULL,
+            ncm TEXT,
+            quantidade TEXT DEFAULT '1',
+            valor_unitario TEXT DEFAULT '0.00',
+            data_entrada TEXT,
+            data_saida TEXT,
+            status TEXT DEFAULT 'ativo'
+                CHECK(status IN ('ativo','exportado','transferido','baixado')),
+            company_id TEXT NOT NULL REFERENCES company(id),
+            created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+            updated_at TEXT DEFAULT CURRENT_TIMESTAMP
+        )
+    """)
+    tables_created += 1
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_repetro_eq_di ON repetro_equipment(repetro_di_id)")
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_repetro_eq_item ON repetro_equipment(item_id)")
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_repetro_eq_status ON repetro_equipment(status)")
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_repetro_eq_company ON repetro_equipment(company_id)")
+
+    # ==================================================================
     # Seed tabelas de catálogo fiscal (CFOP, CST, NCM)
     # ==================================================================
     _seed_fiscal_catalogs(conn)
 
     # Migration: add 'dctfweb' to sped_export_log CHECK if table already existed
     _migrate_sped_export_log_check(conn)
+
+    # Migration: add manifestação subtypes to br_nfe_event CHECK constraint
+    _migrate_nfe_event_check(conn)
 
     conn.commit()
     conn.close()
@@ -889,6 +1020,75 @@ def _migrate_sped_export_log_check(conn):
         except Exception:
             pass
         print(f"  ℹ sped_export_log migration skipped: {e}")
+
+
+def _migrate_nfe_event_check(conn):
+    """Add manifestação subtypes to br_nfe_event tipo_evento CHECK.
+
+    SQLite does not support ALTER TABLE ... ALTER CHECK, so we rebuild
+    the table if the constraint is missing the new values.
+    """
+    from uuid import uuid4
+    try:
+        # Test if 'confirmacao' is valid by trying to insert with it
+        test_id = str(uuid4())
+        conn.execute("""
+            INSERT INTO br_nfe_event (id, nfe_out_id, tipo_evento, xml_evento, status, company_id)
+            VALUES (?, 'test', 'confirmacao', '<evento/>', 'pendente', 'test')
+        """, (test_id,))
+        conn.execute("DELETE FROM br_nfe_event WHERE id = ?", (test_id,))
+        return  # Constraint already includes 'confirmacao'
+    except Exception:
+        pass  # Constraint needs updating
+
+    try:
+        conn.execute("PRAGMA foreign_keys=OFF")
+
+        conn.execute("ALTER TABLE br_nfe_event RENAME TO br_nfe_event_old")
+
+        conn.execute("""
+            CREATE TABLE br_nfe_event (
+                id                  TEXT PRIMARY KEY,
+                nfe_out_id          TEXT NOT NULL,
+                tipo_evento         TEXT NOT NULL
+                                    CHECK(tipo_evento IN ('cancelamento','carta_correcao','manifestacao','confirmacao','ciencia','desconhecimento','operacao_realizada')),
+                numero_sequencial   INTEGER DEFAULT 1,
+                justificativa       TEXT,
+                xml_evento          TEXT,
+                xml_evento_signed   TEXT,
+                protocolo           TEXT,
+                recibo              TEXT,
+                data_processamento  TEXT,
+                status              TEXT DEFAULT 'pendente'
+                                    CHECK(status IN ('pendente','enviado','processado','rejeitado')),
+                motivo_status       TEXT,
+                ambiente            TEXT DEFAULT 'homologacao',
+                company_id          TEXT NOT NULL,
+                created_at          TEXT DEFAULT CURRENT_TIMESTAMP,
+                updated_at          TEXT DEFAULT CURRENT_TIMESTAMP
+            )
+        """)
+
+        conn.execute("""
+            INSERT INTO br_nfe_event
+            SELECT * FROM br_nfe_event_old
+        """)
+
+        conn.execute("DROP TABLE br_nfe_event_old")
+
+        conn.execute("CREATE INDEX IF NOT EXISTS idx_nfe_event_nfe ON br_nfe_event(nfe_out_id)")
+        conn.execute("CREATE INDEX IF NOT EXISTS idx_nfe_event_tipo ON br_nfe_event(tipo_evento)")
+        conn.execute("CREATE INDEX IF NOT EXISTS idx_nfe_event_status ON br_nfe_event(status)")
+        conn.execute("CREATE INDEX IF NOT EXISTS idx_nfe_event_company ON br_nfe_event(company_id)")
+
+        conn.execute("PRAGMA foreign_keys=ON")
+        print("  ✓ br_nfe_event migrated: added manifestação subtypes to tipo_evento constraint")
+    except Exception as e:
+        try:
+            conn.execute("PRAGMA foreign_keys=ON")
+        except Exception:
+            pass
+        print(f"  ℹ br_nfe_event migration skipped: {e}")
 
 
 if __name__ == "__main__":

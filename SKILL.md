@@ -1,10 +1,12 @@
 ---
 name: erpclaw-region-br
-version: 1.4.0
+version: 1.5.0
 description: >
-  Brazilian tax compliance: ICMS/IPI/PIS/COFINS/ISS, NF-e inbound/outbound, SPED EFD ICMS/IPI,
+  Brazilian tax compliance: ICMS/IPI/PIS/COFINS/ISS, NF-e inbound/outbound,
+  NFS-e (service invoices), NF-e advanced (manifestação, complementar, devolução,
+  contingência, exportação), DANFE PDF, SPED EFD ICMS/IPI,
   SPED EFD Contribuições, ECD, ECF, DIFAL, Simples Nacional, REPETRO, REINF, DCTFWeb.
-  86 actions across 9 domains.
+  126 actions across 11 domains.
 author: Morpheus / Thiago Ladeira
 source: https://github.com/avansaber/erpclaw-addons
 tier: 3
@@ -62,6 +64,38 @@ REPETRO, e obrigações acessórias (EFD, ECD, ECF, REINF, DCTFWeb).
 | `generate-danfe-out` | Gerar DANFE para NF-e de saída |
 | `export-nfe-out-xml` | Exportar XML autorizado da NF-e |
 
+### NFS-e (Nota Fiscal de Serviços Eletrônica) — 8 ações
+
+Municipal service tax invoice (ISS). Follows ABRASF national model (2.02/2.03)
+compatible with most Brazilian municipalities. Targets Macaé/RJ with ISS 5% by default.
+
+| Ação | Descrição |
+|------|-----------|
+| `configure-nfse` | Configurar NFS-e por empresa (município, alíquota ISS, regime) |
+| `create-nfse` | Gerar NFS-e a partir de uma fatura de venda (serviços) |
+| `sign-nfse-xml` | Assinar digitalmente o XML da NFS-e (certificado A1) |
+| `transmit-nfse` | Enviar NFS-e para autorização no webservice municipal |
+| `check-nfse-status` | Consultar status de autorização da NFS-e |
+| `cancel-nfse` | Cancelar uma NFS-e autorizada |
+| `list-nfse` | Listar notas fiscais de serviço emitidas |
+| `get-nfse` | Detalhar uma NFS-e específica |
+
+### NF-e Avançada — 7 ações
+
+Advanced NF-e features: Manifestação do Destinatário, download XML from SEFAZ,
+complementary/supplementary NF-e, devolução, contingência (offline), exportação (DI/RE),
+and DANFE PDF generation.
+
+| Ação | Descrição |
+|------|-----------|
+| `manifestar-nfe` | Enviar Manifestação do Destinatário (confirmação, ciência, desconhecimento, oper. realizada) |
+| `download-nfe-xml` | Baixar XML da NF-e da SEFAZ (Distribuição DFe) |
+| `create-nfe-complementar` | Criar NF-e complementar (ajuste de valores) |
+| `create-nfe-devolucao` | Criar NF-e de devolução (CFOP de devolução) |
+| `create-nfe-contingencia` | Criar NF-e em contingência offline (tpEmis=9) |
+| `gerar-xml-nfe-exportacao` | Gerar NF-e para exportação (com DI/RE Drawback) |
+| `imprimir-danfe-pdf` | Gerar DANFE como PDF (weasyprint, reportlab, ou HTML fallback) |
+
 ### Cadastros Fiscais Estruturados — 10 ações
 
 Tabelas estruturadas para dados fiscais brasileiros, substituindo `custom_field_value`
@@ -89,7 +123,7 @@ por tabelas com validação, constraints e integridade referencial.
 | `generate-bloco-d` | Gerar Bloco D (Documentos de Transporte — CT-e, CF-e) |
 | `generate-bloco-e` | Gerar Bloco E (Apuração ICMS/IPI — Débito/Crédito/ST) |
 | `generate-bloco-h` | Gerar Bloco H (Inventário Físico) |
-| `generate-bloco-k` | Gerar Bloco K (Controle da Produção e do Estoque) |
+| `generate-bloco-k` | Gerar Bloco K (Controle da Produção e do Estoque — completo) |
 | `validate-efd` | Validar arquivo EFD contra layout SEFAZ |
 
 ### SPED Contribuições (EFD Contribuições) — 7 ações
@@ -102,6 +136,29 @@ por tabelas com validação, constraints e integridade referencial.
 | `generate-bloco-f-contrib` | Gerar Bloco F (Outras Operações e CST Consolidado) |
 | `generate-bloco-m` | Gerar Bloco M (Apuração PIS/COFINS com créditos) |
 | `generate-bloco-p` | Gerar Bloco P (Apuração por Regime Tributário) |
+
+### ECD (Escrituração Contábil Digital) — 7 ações
+| Ação | Descrição |
+|------|-----------|
+| `generate-ecd` | Gerar ECD completo (Blocos 0, I, J, K, 9) |
+| `generate-ecd-bloco-0` | Gerar Bloco 0 (Abertura, Identificação, Participantes) |
+| `generate-ecd-bloco-i` | Gerar Bloco I (Lançamentos Contábeis a partir do gl_entry) |
+| `generate-ecd-bloco-j` | Gerar Bloco J (Plano de Contas e Balancetes) |
+| `generate-ecd-bloco-k` | Gerar Bloco K (Demonstrações Contábeis: BP e DRE) |
+| `validate-ecd` | Validar arquivo ECD contra regras básicas |
+| `list-ecd-exports` | Listar histórico de exportações ECD |
+
+### ECF (Escrituração Contábil Fiscal) — 8 ações
+| Ação | Descrição |
+|------|-----------|
+| `generate-ecf` | Gerar ECF completo (todos os blocos fiscais) |
+| `generate-ecf-bloco-0` | Gerar Bloco 0 (Abertura e Identificação do Contribuinte) |
+| `generate-ecf-bloco-m` | Gerar Bloco M — E-Lalur (Apuração do Lucro Real — IRPJ) |
+| `generate-ecf-bloco-n` | Gerar Bloco N — E-Lacs (Apuração da CSLL) |
+| `generate-ecf-bloco-p` | Gerar Bloco P (Demonstrações Contábeis Fiscais) |
+| `generate-ecf-bloco-t` | Gerar Bloco T (Distribuição de Lucros) |
+| `validate-ecf` | Validar arquivo ECF contra regras básicas |
+| `list-ecf-exports` | Listar histórico de exportações ECF |
 
 ### Apuração Tributária BR — 15 ações
 | Ação | Descrição |
@@ -150,17 +207,20 @@ por tabelas com validação, constraints e integridade referencial.
 | `generate-reinf-r2020` | Gerar evento R-2020 (Serviços Prestados com Retenção) |
 | `generate-reinf-r2060` | Gerar evento R-2060 (INSS Retido — 11%) |
 
-### Utilitários — 6 ações
+### Utilitários — 11 ações
 | Ação | Descrição |
 |------|-----------|
 | `br-status` | Status do módulo de localização BR |
 | `br-setup` | Configurar localização BR (COA + tax templates + defaults) |
 | `sync-coa-br` | Sincronizar plano de contas BR com template |
 | `list-tax-templates-br` | Listar templates fiscais brasileiros |
-| `configure-repetro` | Configurar regime REPETRO |
-| `repetro-status` | Verificar status REPETRO (DI, vencimentos) |
+| `configure-repetro` | Configurar regime REPETRO (registrar DI) |
+| `repetro-status` | Verificar status REPETRO (DIs, vencimentos, equipamentos) |
+| `register-repetro-equipment` | Registrar equipamento sob regime REPETRO |
+| `repetro-expiry-report` | Relatório de DIs REPETRO próximas do vencimento |
+| `repetro-inventory` | Inventário de equipamentos sob regime REPETRO |
 
-**Total: 86 ações**
+**Total: 111 ações**
 
 ## Segurança
 
@@ -193,7 +253,7 @@ Ou peça naturalmente: "Instalar módulo de localização brasileira"
 ```
 erpclaw-region-br/
 ├── SKILL.md              ← Este arquivo
-├── init_db.py            ← Schema de tabelas fiscais BR (20 tabelas: nfe, cfop, cst, ncm, tax_period, tax_apuration, sped_log, difal, nfe_out, company_fiscal, customer_fiscal, item_fiscal, mva_st_config, fecp_config, iss_config, withholding_config)
+├── init_db.py            ← Schema de tabelas fiscais BR (24 tabelas: nfe, cfop, cst, ncm, tax_period, tax_apuration, sped_log, difal, nfe_out, company_fiscal, customer_fiscal, item_fiscal, mva_st_config, fecp_config, iss_config, withholding_config, repetro_di, repetro_equipment)
 ├── assets/
 │   └── charts/
 │       └── br_gaap.json  ← Plano de contas brasileiro (225 contas)
@@ -205,11 +265,15 @@ erpclaw-region-br/
     ├── sefaz_ws.py       ← Cliente SOAP SEFAZ WebServices
     ├── nfe_emission.py   ← Orquestrador de emissão NF-e (17 ações)
     ├── fiscal_data.py    ← Dados fiscais estruturados (10 ações)
-    ├── sped_efd.py       ← Gerador EFD ICMS/IPI
+    ├── sped_efd.py       ← Gerador EFD ICMS/IPI (Bloco K completo)
     ├── sped_contrib.py   ← Gerador EFD Contribuições
+    ├── ecd.py            ← Gerador ECD (Escrituração Contábil Digital)
+    ├── ecf.py            ← Gerador ECF (Escrituração Contábil Fiscal)
     ├── tax_calc_br.py    ← Cálculos tributários BR
     ├── fiscal_catalog.py ← CFOP, CST, NCM
-    ├── setup_br.py       ← Configuração inicial BR
+    ├── setup_br.py       ← Configuração inicial BR + REPETRO
+    ├── dctfweb.py        ← DCTFWeb (débitos federais)
+    ├── reinf.py          ← REINF (retenções na fonte)
     └── tests/
         ├── conftest.py
         └── test_nfe.py
