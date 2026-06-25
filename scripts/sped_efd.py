@@ -279,6 +279,16 @@ def generate_efd_icms_ipi(conn, args):
     if blocoC.get('status') == 'ok':
         all_lines.append(blocoC['data'].get('preview', ''))
 
+    # Bloco D
+    blocoD = generate_bloco_d(conn, args)
+    if blocoD.get('status') == 'ok':
+        all_lines.append(blocoD['data'].get('preview', ''))
+
+    # Bloco E
+    blocoE = generate_bloco_e(conn, args)
+    if blocoE.get('status') == 'ok':
+        all_lines.append(blocoE['data'].get('preview', ''))
+
     # Bloco H
     blocoH = generate_bloco_h(conn, args)
     if blocoH.get('status') == 'ok':
@@ -316,6 +326,223 @@ def generate_efd_icms_ipi(conn, args):
     })
 
 
+def generate_bloco_d(conn, args):
+    """Generate Bloco D — Transportation Documents (D001-D990)."""
+    company_id = args.company_id
+    if not company_id:
+        return err("--company-id obrigatório")
+    ano = args.ano or datetime.now().year
+    mes = args.mes or datetime.now().month
+
+    lines = []
+    lines.append("|D001|0|")
+
+    start = f"{ano}-{mes:02d}-01"
+    end_month = mes + 1 if mes < 12 else 1
+    end_year = ano if mes < 12 else ano + 1
+    end = f"{end_year}-{end_month:02d}-01"
+
+    # D100 — CT-e (Conhecimento de Transporte Eletrônico)
+    # Look for freight-related NF-e entries (CFOP 1.351, 2.351, etc.)
+    ctes = conn.execute("""
+        SELECT id, numero_nfe, serie, data_emissao, emitente_cnpj, emitente_nome,
+               cfop_principal, valor_total, base_icms, valor_icms
+        FROM nfe_import
+        WHERE company_id = ?
+          AND data_emissao >= ? AND data_emissao < ?
+          AND cfop_principal IN ('1351','2351','3351','1352','2352','3352','1360','2360')
+        LIMIT 50
+    """, (company_id, start, end)).fetchall()
+
+    for cte in ctes:
+        lines.append(
+            f"|D100|0|0|57|{cte[2] or '1'}|{cte[1] or ''}|"
+            f"{cte[6] or ''}|{cte[3] or ''}|{cte[7] or '0.00'}|{cte[4] or ''}|"
+            f"{cte[5][:60] if cte[5] else ''}|{cte[8] or '0.00'}|{cte[9] or '0.00'}|0.00|"
+            f"{cte[5][:60] if cte[5] else ''}|{cte[4] or ''}||0|0|0|0||0||"
+        )
+
+    # D500 — CF-e (Cupom Fiscal Eletrônico) for transport
+    cfes = conn.execute("""
+        SELECT si.id, si.name, si.posting_date, si.total,
+               COALESCE(cf.cnpj, ''), COALESCE(cf.uf, '')
+        FROM sales_invoice si
+        LEFT JOIN customer_fiscal cf ON si.customer_id = cf.customer_id
+        WHERE si.company_id = ?
+          AND si.posting_date >= ? AND si.posting_date < ?
+        LIMIT 20
+    """, (company_id, start, end)).fetchall()
+
+    for cfe in cfes:
+        lines.append(
+            f"|D500|0|0|59|1|{cfe[1] or ''}|{cfe[2] or ''}|{cfe[3] or '0.00'}|{cfe[4] or ''}|"
+            f"{cfe[5] or ''}|0|0|0.00|0.00|||0||0.00||0.00||"
+        )
+
+    lines.append(f"|D990|{len(lines) + 1}|")
+    return ok({
+        "bloco": "D",
+        "registros": len(lines),
+        "ctes": len(ctes),
+        "preview": "\n".join(lines[:3]) + ("\n..." if len(lines) > 3 else ""),
+    })
+
+
+def generate_bloco_e(conn, args):
+    """Generate Bloco E — ICMS/IPI Assessment (E001-E990)."""
+    company_id = args.company_id
+    if not company_id:
+        return err("--company-id obrigatório")
+    ano = args.ano or datetime.now().year
+    mes = args.mes or datetime.now().month
+
+    lines = []
+    lines.append(f"|E001|0|")
+
+    start = f"{ano}-{mes:02d}-01"
+    end_month = mes + 1 if mes < 12 else 1
+    end_year = ano if mes < 12 else ano + 1
+    end = f"{end_year}-{end_month:02d}-01"
+
+    # E100 — Período de Apuração ICMS
+    dt_ini = f"01{mes:02d}{ano}"
+    import calendar
+    last_day = calendar.monthrange(ano, mes)[1]
+    dt_fin = f"{last_day:02d}{mes:02d}{ano}"
+    lines.append(f"|E100|{dt_ini}|{dt_fin}|")
+
+    # E110 — Débito ICMS (saídas por UF)
+    debits_by_uf = conn.execute("""
+        SELECT COALESCE(cf.uf, 'RJ') as uf,
+               COALESCE(SUM(CAST(bo.valor_icms AS REAL)), 0) as valor_icms,
+               COALESCE(SUM(CAST(bo.base_icms AS REAL)), 0) as base_icms,
+               COUNT(*) as qtd_nfe
+        FROM br_nfe_out bo
+        LEFT JOIN customer_fiscal cf ON bo.customer_cnpj = cf.cnpj
+        WHERE bo.company_id = ?
+          AND bo.data_emissao >= ? AND bo.data_emissao < ?
+          AND bo.status = 'autorizado'
+        GROUP BY cf.uf
+    """, (company_id, start, end)).fetchall()
+
+    total_debit = 0.0
+    for d in debits_by_uf:
+        uf = d[0] or "RJ"
+        valor_icms = float(d[1] or 0)
+        base_icms = float(d[2] or 0)
+        total_debit += valor_icms
+        lines.append(
+            f"|E110|{uf}|{base_icms:.2f}|{valor_icms:.2f}|0.00|0.00|0.00|0.00|"
+        )
+
+    # If no authorized NF-es, check sales_invoice
+    if not debits_by_uf:
+        sales = conn.execute("""
+            SELECT COALESCE(SUM(CAST(total AS REAL)), 0)
+            FROM sales_invoice
+            WHERE company_id = ? AND posting_date >= ? AND posting_date < ?
+        """, (company_id, start, end)).fetchone()
+        sales_total = float(sales[0] or 0)
+        if sales_total > 0:
+            icms_est = sales_total * 0.20
+            lines.append(f"|E110|RJ|{sales_total:.2f}|{icms_est:.2f}|0.00|0.00|0.00|0.00|")
+            total_debit = icms_est
+
+    # E111 — Ajuste de débito
+    lines.append(f"|E111|RJ|001|Outros débitos||0.00|")
+
+    # E113 — ICMS ST (Substituição Tributária)
+    st_debits = conn.execute("""
+        SELECT COALESCE(cf.uf, 'RJ'),
+               COALESCE(SUM(CAST(bo.valor_icms_st AS REAL)), 0),
+               COALESCE(SUM(CAST(bo.base_icms_st AS REAL)), 0)
+        FROM br_nfe_out bo
+        LEFT JOIN customer_fiscal cf ON bo.customer_cnpj = cf.cnpj
+        WHERE bo.company_id = ?
+          AND bo.data_emissao >= ? AND bo.data_emissao < ?
+          AND bo.status = 'autorizado'
+        GROUP BY cf.uf
+    """, (company_id, start, end)).fetchall()
+
+    for st in st_debits:
+        uf = st[0] or "RJ"
+        if float(st[1] or 0) > 0:
+            lines.append(
+                f"|E113|{uf}|{st[2] or '0.00'}|{st[1] or '0.00'}|0.00|0.00|0.00|0.00|"
+            )
+
+    # E115 — ICMS Adicional
+    fp_debits = conn.execute("""
+        SELECT COALESCE(cf.uf, 'RJ'),
+               COALESCE(SUM(CAST(bo.base_icms AS REAL)), 0),
+               COALESCE(SUM(CAST(bo.valor_icms AS REAL)), 0)
+        FROM br_nfe_out bo
+        LEFT JOIN customer_fiscal cf ON bo.customer_cnpj = cf.cnpj
+        WHERE bo.company_id = ?
+          AND bo.data_emissao >= ? AND bo.data_emissao < ?
+          AND bo.status = 'autorizado'
+        GROUP BY cf.uf
+    """, (company_id, start, end)).fetchall()
+
+    for fp in fp_debits:
+        uf = fp[0] or "RJ"
+        base = float(fp[1] or 0)
+        if base > 0:
+            fecp = base * 0.02  # FECP typically 2%
+            lines.append(
+                f"|E115|{uf}|{base:.2f}|{fecp:.2f}|0.00|0.00|0.00|0.00|"
+            )
+
+    # E116 — Detalhe FECP
+    lines.append(f"|E116|RJ|OR|Fundo Estadual de Combate à Pobreza||0.00|")
+
+    # Tax apuration data for ICMS
+    tax_data = conn.execute("""
+        SELECT tributo, uf, debito, credito, saldo_devedor, saldo_credor, valor_pagar
+        FROM tax_apuration
+        WHERE company_id = ?
+        ORDER BY created_at DESC
+    """, (company_id,)).fetchall()
+
+    icms_credit = 0.0
+    for td in tax_data:
+        if td[0] == 'icms':
+            icms_credit = float(td[2] or 0) if td[2] else 0.0
+            break
+
+    # If no tax_apuration, calculate from nfe_import
+    if icms_credit == 0.0:
+        icms_credit = float(conn.execute("""
+            SELECT COALESCE(SUM(CAST(valor_icms AS REAL)), 0)
+            FROM nfe_import
+            WHERE company_id = ? AND data_emissao >= ? AND data_emissao < ?
+        """, (company_id, start, end)).fetchone()[0] or 0)
+
+    # E200 — Período de Apuração ICMS ST
+    lines.append(f"|E200|{dt_ini}|{dt_fin}|")
+
+    # E210 — Apuração ST
+    st_valor = float(sum(float(st[1] or 0) for st in st_debits) or 0)
+    lines.append(
+        f"|E210|RJ|{st_valor:.2f}|0.00|{st_valor:.2f}|{st_valor:.2f}|0.00|0.00|"
+    )
+
+    # E220 — Ajuste ST
+    lines.append(f"|E220|RJ|0000|Sem ajuste ST|0.00|")
+
+    # Close block
+    lines.append(f"|E990|{len(lines) + 1}|")
+
+    return ok({
+        "bloco": "E",
+        "registros": len(lines),
+        "icms_debito_total": f"{total_debit:.2f}",
+        "icms_credito": f"{icms_credit:.2f}",
+        "icms_st": f"{st_valor:.2f}",
+        "preview": "\n".join(lines[:3]) + ("\n..." if len(lines) > 3 else ""),
+    })
+
+
 def validate_efd(conn, args):
     """Validate EFD file against basic rules."""
     sped_id = args.sped_export_id
@@ -344,6 +571,8 @@ ACTIONS = {
     "generate-efd-icms-ipi": generate_efd_icms_ipi,
     "generate-bloco-0": generate_bloco_0,
     "generate-bloco-c": generate_bloco_c,
+    "generate-bloco-d": generate_bloco_d,
+    "generate-bloco-e": generate_bloco_e,
     "generate-bloco-h": generate_bloco_h,
     "generate-bloco-k": generate_bloco_k,
     "validate-efd": validate_efd,

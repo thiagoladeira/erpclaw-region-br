@@ -38,6 +38,8 @@ from fiscal_catalog import ACTIONS as FISCAL_CATALOG_ACTIONS
 from setup_br import ACTIONS as SETUP_ACTIONS
 from nfe_emission import ACTIONS as NFE_EMISSION_ACTIONS
 from fiscal_data import ACTIONS as FISCAL_DATA_ACTIONS
+from dctfweb import ACTIONS as DCTFWEB_ACTIONS
+from reinf import ACTIONS as REINF_ACTIONS
 
 # ---------------------------------------------------------------------------
 SKILL = "erpclaw-region-br"
@@ -52,6 +54,8 @@ ACTIONS.update(FISCAL_CATALOG_ACTIONS)
 ACTIONS.update(SETUP_ACTIONS)
 ACTIONS.update(NFE_EMISSION_ACTIONS)
 ACTIONS.update(FISCAL_DATA_ACTIONS)
+ACTIONS.update(DCTFWEB_ACTIONS)
+ACTIONS.update(REINF_ACTIONS)
 
 
 def main():
@@ -139,6 +143,10 @@ def main():
     parser.add_argument("--uf-destino")
     parser.add_argument("--aliquota-interestadual")
     parser.add_argument("--aliquota-interna-destino")
+
+    # DCTFWeb
+    parser.add_argument("--evento")
+    parser.add_argument("--tipo-reinf")
 
     # REPETRO
     parser.add_argument("--di-numero")

@@ -252,7 +252,7 @@ def create_br_tables(db_path=None):
         CREATE TABLE IF NOT EXISTS sped_export_log (
             id                  TEXT PRIMARY KEY,
             tipo                TEXT NOT NULL
-                                CHECK(tipo IN ('efd_icms_ipi','efd_contrib','ecd','ecf','reinf')),
+                                CHECK(tipo IN ('efd_icms_ipi','efd_contrib','ecd','ecf','dctfweb','reinf')),
             ano                 INTEGER NOT NULL,
             mes                 INTEGER NOT NULL CHECK(mes BETWEEN 1 AND 12),
             periodo             TEXT,
@@ -588,6 +588,9 @@ def create_br_tables(db_path=None):
     # ==================================================================
     _seed_fiscal_catalogs(conn)
 
+    # Migration: add 'dctfweb' to sped_export_log CHECK if table already existed
+    _migrate_sped_export_log_check(conn)
+
     conn.commit()
     conn.close()
 
@@ -698,6 +701,84 @@ def _seed_fiscal_catalogs(conn):
             "INSERT OR IGNORE INTO ncm (id, codigo, descricao) VALUES (?, ?, ?)",
             (str(uuid4()), codigo, descricao)
         )
+
+
+def _migrate_sped_export_log_check(conn):
+    """Add 'dctfweb' to sped_export_log tipo CHECK constraint.
+
+    SQLite does not support ALTER TABLE ... ALTER CHECK, so we rebuild
+    the table if the constraint is missing the new value. This is safe
+    because the table is small (export metadata, not financial data).
+    """
+    try:
+        # Test if 'dctfweb' is valid by trying to insert with it
+        # If it fails, the constraint needs updating
+        test_id = str(uuid4())
+        conn.execute("""
+            INSERT INTO sped_export_log (id, tipo, ano, mes, total_registros, status, company_id)
+            VALUES (?, 'dctfweb', 2026, 6, 0, 'gerado', 'test')
+        """, (test_id,))
+        # It worked — clean up test row
+        conn.execute("DELETE FROM sped_export_log WHERE id = ?", (test_id,))
+        return  # Constraint already includes 'dctfweb'
+    except Exception:
+        pass  # Constraint needs updating
+
+    try:
+        # Attempt ALTER TABLE to drop and recreate with new constraint
+        # Strategy: rename, create new, copy data, drop old
+        conn.execute("PRAGMA foreign_keys=OFF")
+
+        # 1. Rename existing table
+        conn.execute("ALTER TABLE sped_export_log RENAME TO sped_export_log_old")
+
+        # 2. Create new table with updated CHECK
+        conn.execute("""
+            CREATE TABLE sped_export_log (
+                id                  TEXT PRIMARY KEY,
+                tipo                TEXT NOT NULL
+                                    CHECK(tipo IN ('efd_icms_ipi','efd_contrib','ecd','ecf','dctfweb','reinf')),
+                ano                 INTEGER NOT NULL,
+                mes                 INTEGER NOT NULL CHECK(mes BETWEEN 1 AND 12),
+                periodo             TEXT,
+                arquivo_path        TEXT,
+                arquivo_hash        TEXT,
+                tamanho_bytes       INTEGER,
+                total_registros     INTEGER,
+                status              TEXT DEFAULT 'gerado'
+                                    CHECK(status IN ('gerado','validado','assinado','transmitido','processado','rejeitado','erro')),
+                protocolo           TEXT,
+                recibo              TEXT,
+                mensagem_sEFAZ      TEXT,
+                company_id          TEXT NOT NULL,
+                created_at          TEXT DEFAULT CURRENT_TIMESTAMP,
+                updated_at          TEXT DEFAULT CURRENT_TIMESTAMP
+            )
+        """)
+
+        # 3. Copy data
+        conn.execute("""
+            INSERT INTO sped_export_log
+            SELECT * FROM sped_export_log_old
+        """)
+
+        # 4. Drop old table
+        conn.execute("DROP TABLE sped_export_log_old")
+
+        # 5. Recreate indexes
+        conn.execute("CREATE INDEX IF NOT EXISTS idx_sped_log_tipo ON sped_export_log(tipo)")
+        conn.execute("CREATE INDEX IF NOT EXISTS idx_sped_log_periodo ON sped_export_log(ano, mes)")
+        conn.execute("CREATE INDEX IF NOT EXISTS idx_sped_log_company ON sped_export_log(company_id)")
+
+        conn.execute("PRAGMA foreign_keys=ON")
+        print("  ✓ sped_export_log migrated: added 'dctfweb' to tipo constraint")
+    except Exception as e:
+        # Already migrated or nothing to migrate
+        try:
+            conn.execute("PRAGMA foreign_keys=ON")
+        except Exception:
+            pass
+        print(f"  ℹ sped_export_log migration skipped: {e}")
 
 
 if __name__ == "__main__":

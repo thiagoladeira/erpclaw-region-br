@@ -1,10 +1,10 @@
 ---
 name: erpclaw-region-br
-version: 1.2.0
+version: 1.3.0
 description: >
   Brazilian tax compliance: ICMS/IPI/PIS/COFINS/ISS, NF-e inbound/outbound, SPED EFD ICMS/IPI,
   SPED EFD Contribuições, ECD, ECF, DIFAL, Simples Nacional, REPETRO, REINF, DCTFWeb.
-  72 actions across 7 domains.
+  83 actions across 9 domains.
 author: Morpheus / Thiago Ladeira
 source: https://github.com/avansaber/erpclaw-addons
 tier: 3
@@ -80,24 +80,28 @@ por tabelas com validação, constraints e integridade referencial.
 | `list-item-fiscal` | Listar itens com classificação fiscal (filtro por NCM/empresa) |
 | `migrate-fiscal-data` | Migrar dados de custom_field_value para tabelas estruturadas |
 
-### SPED Fiscal (EFD ICMS/IPI) — 6 ações
+### SPED Fiscal (EFD ICMS/IPI) — 8 ações
 | Ação | Descrição |
 |------|-----------|
 | `generate-efd-icms-ipi` | Gerar EFD ICMS/IPI completo (Blocos 0, C, D, E, H, K) |
 | `generate-bloco-0` | Gerar Bloco 0 (Abertura, Identificação, Participantes) |
 | `generate-bloco-c` | Gerar Bloco C (Documentos Fiscais - Mercadorias) |
+| `generate-bloco-d` | Gerar Bloco D (Documentos de Transporte — CT-e, CF-e) |
+| `generate-bloco-e` | Gerar Bloco E (Apuração ICMS/IPI — Débito/Crédito/ST) |
 | `generate-bloco-h` | Gerar Bloco H (Inventário Físico) |
 | `generate-bloco-k` | Gerar Bloco K (Controle da Produção e do Estoque) |
 | `validate-efd` | Validar arquivo EFD contra layout SEFAZ |
 
-### SPED Contribuições (EFD Contribuições) — 5 ações
+### SPED Contribuições (EFD Contribuições) — 7 ações
 | Ação | Descrição |
 |------|-----------|
-| `generate-efd-contrib` | Gerar EFD Contribuições (PIS/COFINS) |
-| `generate-bloco-a` | Gerar Bloco A (Documentos Fiscais - Serviços) |
-| `generate-bloco-c` | Gerar Bloco C (Documentos Fiscais - Mercadorias) |
-| `generate-bloco-m` | Gerar Bloco M (Apuração PIS/COFINS) |
-| `generate-bloco-p` | Gerar Bloco P (Apuração PIS/COFINS por Regime) |
+| `generate-efd-contrib` | Gerar EFD Contribuições completo (Blocos 0, A, C, D, F, M, P) |
+| `generate-bloco-a` | Gerar Bloco A (Documentos Fiscais — Serviços) |
+| `generate-bloco-c-contrib` | Gerar Bloco C (Documentos Fiscais — Mercadorias — PIS/COFINS) |
+| `generate-bloco-d-contrib` | Gerar Bloco D (Aquisição de Serviços de Transporte) |
+| `generate-bloco-f-contrib` | Gerar Bloco F (Outras Operações e CST Consolidado) |
+| `generate-bloco-m` | Gerar Bloco M (Apuração PIS/COFINS com créditos) |
+| `generate-bloco-p` | Gerar Bloco P (Apuração por Regime Tributário) |
 
 ### Apuração Tributária BR — 12 ações
 | Ação | Descrição |
@@ -127,6 +131,22 @@ por tabelas com validação, constraints e integridade referencial.
 | `set-item-fiscal-data` | Configurar dados fiscais completos de um item |
 | `get-item-fiscal-data` | Consultar dados fiscais de um item |
 
+### DCTFWeb — 3 ações
+| Ação | Descrição |
+|------|-----------|
+| `calculate-dctf-debts` | Calcular débitos federais (PIS, COFINS, IRPJ, CSLL, IPI, INSS) |
+| `generate-dctf` | Gerar declaração DCTFWeb (layout RFB) |
+| `list-dctf-periods` | Listar períodos de DCTF gerados |
+
+### REINF (Retenções na Fonte) — 5 ações
+| Ação | Descrição |
+|------|-----------|
+| `generate-reinf` | Gerar REINF completo (todos os eventos) |
+| `generate-reinf-r1000` | Gerar evento R-1000 (Informações do Contribuinte) |
+| `generate-reinf-r2010` | Gerar evento R-2010 (Serviços Tomados com Retenção) |
+| `generate-reinf-r2020` | Gerar evento R-2020 (Serviços Prestados com Retenção) |
+| `generate-reinf-r2060` | Gerar evento R-2060 (INSS Retido — 11%) |
+
 ### Utilitários — 6 ações
 | Ação | Descrição |
 |------|-----------|
@@ -137,7 +157,7 @@ por tabelas com validação, constraints e integridade referencial.
 | `configure-repetro` | Configurar regime REPETRO |
 | `repetro-status` | Verificar status REPETRO (DI, vencimentos) |
 
-**Total: 72 ações**
+**Total: 83 ações**
 
 ## Segurança
 
