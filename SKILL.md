@@ -21,6 +21,17 @@ scripts:
   - scripts/nfe_signer.py
   - scripts/sefaz_ws.py
   - scripts/nfe_emission.py
+  - scripts/nfse.py
+  - scripts/nfe_avancada.py
+  - scripts/nfe_parser.py
+  - scripts/fiscal_data.py
+  - scripts/sped_efd.py
+  - scripts/sped_contrib.py
+  - scripts/tax_calc_br.py
+  - scripts/fiscal_catalog.py
+  - scripts/setup_br.py
+  - scripts/dctfweb.py
+  - scripts/reinf.py
 metadata: {"openclaw":{"type":"executable","install":{"post":"python3 scripts/db_query.py --action br-status"},"requires":{"bins":["python3"],"env":[],"optionalEnv":["ERPCLAW_DB_PATH"]},"os":["darwin","linux"]}}
 ---
 
@@ -220,7 +231,7 @@ por tabelas com validação, constraints e integridade referencial.
 | `repetro-expiry-report` | Relatório de DIs REPETRO próximas do vencimento |
 | `repetro-inventory` | Inventário de equipamentos sob regime REPETRO |
 
-**Total: 111 ações**
+**Total: 126 ações**
 
 ## Segurança
 
@@ -253,7 +264,7 @@ Ou peça naturalmente: "Instalar módulo de localização brasileira"
 ```
 erpclaw-region-br/
 ├── SKILL.md              ← Este arquivo
-├── init_db.py            ← Schema de tabelas fiscais BR (24 tabelas: nfe, cfop, cst, ncm, tax_period, tax_apuration, sped_log, difal, nfe_out, company_fiscal, customer_fiscal, item_fiscal, mva_st_config, fecp_config, iss_config, withholding_config, repetro_di, repetro_equipment)
+├── init_db.py            ← Schema de tabelas fiscais BR (26 tabelas: nfe, nfse, nfse_config, cfop, cst, ncm, tax_period, tax_apuration, sped_log, difal, nfe_out, company_fiscal, customer_fiscal, item_fiscal, mva_st_config, fecp_config, iss_config, withholding_config, repetro_di, repetro_equipment)
 ├── assets/
 │   └── charts/
 │       └── br_gaap.json  ← Plano de contas brasileiro (225 contas)
@@ -263,7 +274,9 @@ erpclaw-region-br/
     ├── nfe_xml_gen.py    ← Gerador de XML NF-e (Layout 4.00)
     ├── nfe_signer.py     ← Assinador digital XMLDSig (A1)
     ├── sefaz_ws.py       ← Cliente SOAP SEFAZ WebServices
-    ├── nfe_emission.py   ← Orquestrador de emissão NF-e (17 ações)
+    ├── nfe_emission.py   ← Orquestrador de emissão NF-e (17 ações + DANFE PDF)
+    ├── nfse.py           ← NFS-e: ABRASF RPS, municipal ISS (8 ações)
+    ├── nfe_avancada.py   ← NF-e Avançada: manifestação, download, compl., devol., cont., exp., DANFE PDF (7 ações)
     ├── fiscal_data.py    ← Dados fiscais estruturados (10 ações)
     ├── sped_efd.py       ← Gerador EFD ICMS/IPI (Bloco K completo)
     ├── sped_contrib.py   ← Gerador EFD Contribuições
