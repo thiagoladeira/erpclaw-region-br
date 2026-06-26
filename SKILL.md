@@ -349,7 +349,7 @@ Ou peça naturalmente: "Instalar módulo de localização brasileira"
 ```
 erpclaw-region-br/
 ├── SKILL.md              ← Este arquivo
-├── init_db.py            ← Schema de tabelas fiscais BR (30 tabelas: nfe, nfse, nfse_config, cfop, cst, ncm, tax_period, tax_apuration, sped_log, difal, nfe_out, company_fiscal, customer_fiscal, item_fiscal, mva_st_config, fecp_config, iss_config, withholding_config, repetro_di, repetro_equipment, cte_config, cte, drawback_act, drawback_import)
+├── init_db.py            ← Schema de tabelas fiscais BR (32 tabelas: nfe, nfse, nfse_config, cfop, cst, ncm, tax_period, tax_apuration, sped_log, difal, nfe_out, company_fiscal, customer_fiscal, item_fiscal, mva_st_config, fecp_config, iss_config, withholding_config, repetro_di, repetro_equipment, cte_config, cte, drawback_act, drawback_import, esocial_config, esocial_event)
 ├── assets/
 │   └── charts/
 │       └── br_gaap.json  ← Plano de contas brasileiro (225 contas)
@@ -375,6 +375,7 @@ erpclaw-region-br/
     ├── setup_br.py       ← Configuração inicial BR + REPETRO
     ├── dctfweb.py        ← DCTFWeb (débitos federais)
     ├── reinf.py          ← REINF (retenções na fonte)
+    ├── esocial.py        ← eSocial (labor/social security — 14 ações)
     └── tests/
         ├── conftest.py         ← Fixtures pytest (DB em memória, company_fiscal)
         ├── test_fiscal_data.py ← Testes de validação CNPJ/CPF e CRUD fiscal
