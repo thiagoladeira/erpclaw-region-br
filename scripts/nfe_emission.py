@@ -556,21 +556,24 @@ def validate_nfe_out(conn, args):
     if "<transp>" not in xml_content:
         errors.append("Missing transp group")
 
-    # Try XSD validation if lxml and xmlschema are available
-    xsd_valid = None
+    # Try XSD validation via nfe_validator
+    xsd_result = {"valid": None, "errors": []}
     try:
-        from lxml import etree
-        import xmlschema
-        xsd_valid = True  # placeholder; would need actual XSD file
+        from nfe_validator import validate_nfe_xsd_advanced
+        xsd_result = validate_nfe_xsd_advanced(xml_content)
     except ImportError:
-        xsd_valid = None  # optional dependency not available
+        xsd_result = {"valid": None, "errors": [], "warning": "nfe_validator not available"}
+    except Exception as e:
+        xsd_result = {"valid": None, "errors": [str(e)]}
 
-    if errors:
+    if errors or xsd_result.get("valid") is False:
+        combined_errors = errors + (xsd_result.get("errors", []) if xsd_result.get("valid") is False else [])
         return ok({
             "validated": False,
-            "errors": errors,
-            "xsd_available": xsd_valid is not None,
-            "warning": "XML structure issues found",
+            "errors": combined_errors,
+            "xsd_valid": xsd_result.get("valid") is True,
+            "xsd_errors": xsd_result.get("errors") if xsd_result.get("valid") is False else [],
+            "warning": "XML validation issues found",
         })
 
     # Update status
@@ -586,7 +589,8 @@ def validate_nfe_out(conn, args):
         "nfe_out_id": nfe_id,
         "chave_acesso": nfe["chave_acesso"],
         "status": "validado",
-        "xsd_validation": xsd_valid,
+        "xsd_valid": xsd_result.get("valid") is True,
+        "xsd_details": xsd_result.get("details") if xsd_result.get("valid") else None,
         "message": "NF-e XML validated successfully",
     })
 

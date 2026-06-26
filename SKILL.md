@@ -1,12 +1,13 @@
 ---
 name: erpclaw-region-br
-version: 1.5.0
+version: 1.6.0
 description: >
   Brazilian tax compliance: ICMS/IPI/PIS/COFINS/ISS, NF-e inbound/outbound,
   NFS-e (service invoices), NF-e advanced (manifestação, complementar, devolução,
-  contingência, exportação), DANFE PDF, SPED EFD ICMS/IPI,
-  SPED EFD Contribuições, ECD, ECF, DIFAL, Simples Nacional, REPETRO, REINF, DCTFWeb.
-  126 actions across 11 domains.
+  contingência, exportação), CT-e (freight transport), Drawback/Exportação,
+  DANFE PDF, SPED EFD ICMS/IPI, SPED EFD Contribuições, ECD, ECF, DIFAL,
+  Simples Nacional, REPETRO, REINF, DCTFWeb.
+  135 actions across 13 domains.
 author: Morpheus / Thiago Ladeira
 source: https://github.com/avansaber/erpclaw-addons
 tier: 3
@@ -19,12 +20,15 @@ scripts:
   - scripts/db_query.py
   - scripts/nfe_xml_gen.py
   - scripts/nfe_signer.py
+  - scripts/nfe_validator.py
   - scripts/sefaz_ws.py
   - scripts/nfe_emission.py
   - scripts/nfse.py
   - scripts/nfe_avancada.py
   - scripts/nfe_parser.py
   - scripts/fiscal_data.py
+  - scripts/cte.py
+  - scripts/drawback.py
   - scripts/sped_efd.py
   - scripts/sped_contrib.py
   - scripts/tax_calc_br.py
@@ -39,7 +43,7 @@ metadata: {"openclaw":{"type":"executable","install":{"post":"python3 scripts/db
 
 Módulo de compliance fiscal brasileiro para ERPClaw. Implementa parsing de NF-e, geração de SPED,
 apuração de tributos brasileiros (ICMS, IPI, PIS, COFINS, ISS), DIFAL, Simples Nacional,
-REPETRO, e obrigações acessórias (EFD, ECD, ECF, REINF, DCTFWeb).
+CT-e, Drawback, REPETRO, XSD validation, e obrigações acessórias (EFD, ECD, ECF, REINF, DCTFWeb).
 
 ## Domínios e Ações
 
@@ -61,7 +65,7 @@ REPETRO, e obrigações acessórias (EFD, ECD, ECF, REINF, DCTFWeb).
 | `configure-nfe` | Configurar emissão de NF-e para uma empresa |
 | `get-nfe-config` | Consultar configuração de emissão de NF-e |
 | `create-nfe-out` | Criar NF-e de saída a partir de uma fatura de venda |
-| `validate-nfe-out` | Validar XML da NF-e contra estrutura SEFAZ |
+| `validate-nfe-out` | Validar XML da NF-e contra estrutura SEFAZ + XSD schema |
 | `sign-nfe-xml` | Assinar digitalmente o XML da NF-e (certificado A1) |
 | `transmit-nfe` | Enviar NF-e assinada para autorização na SEFAZ |
 | `check-nfe-status` | Consultar status de autorização na SEFAZ |
@@ -107,6 +111,46 @@ and DANFE PDF generation.
 | `gerar-xml-nfe-exportacao` | Gerar NF-e para exportação (com DI/RE Drawback) |
 | `imprimir-danfe-pdf` | Gerar DANFE como PDF (weasyprint, reportlab, ou HTML fallback) |
 
+### CT-e (Conhecimento de Transporte Eletrônico) — 8 ações
+
+Electronic freight transport document for companies that transport goods.
+Covers the complete CT-e lifecycle from configuration to cancellation.
+Reuses the same A1 certificate infrastructure as NF-e for XMLDSig signing.
+
+| Ação | Descrição |
+|------|-----------|
+| `configure-cte` | Configurar emissão de CT-e por empresa (UF, certificado, ambiente) |
+| `create-cte` | Gerar CT-e a partir de delivery notes ou dados manuais |
+| `sign-cte-xml` | Assinar digitalmente o XML do CT-e (certificado A1) |
+| `transmit-cte` | Enviar CT-e para autorização na SEFAZ |
+| `check-cte-status` | Consultar status de autorização do CT-e |
+| `cancel-cte` | Cancelar um CT-e autorizado |
+| `list-cte` | Listar CT-es com filtros (empresa, data, destinatário) |
+| `get-cte` | Detalhar um CT-e específico |
+
+### Drawback / Exportação — 5 ações
+
+Drawback regime management: suspension/exemption of federal taxes on imports
+used to manufacture products for export. Also generates NF-e for export
+with DI/RE/Drawback references.
+
+| Ação | Descrição |
+|------|-----------|
+| `configure-drawback` | Registrar Ato Concessório de Drawback (modalidade, valor, vencimento) |
+| `import-drawback-nfe` | Vincular NF-e de importação a um ato de Drawback |
+| `generate-drawback-report` | Relatório de utilização de Drawback por ato/período |
+| `list-drawback-acts` | Listar atos de Drawback com filtros |
+| `create-nfe-exportacao` | Gerar NF-e para exportação (com DI/RE, Drawback) |
+
+### Validação XSD — 1 ação
+
+Real XSD schema validation for NF-e XML against official SEFAZ schema
+(procNFe_v4.00.xsd). Downloads and caches the schema on first use.
+
+| Ação | Descrição |
+|------|-----------|
+| `validate-nfe-xsd` | Validar XML de NF-e contra schema XSD oficial da SEFAZ |
+
 ### Cadastros Fiscais Estruturados — 10 ações
 
 Tabelas estruturadas para dados fiscais brasileiros, substituindo `custom_field_value`
@@ -148,7 +192,7 @@ por tabelas com validação, constraints e integridade referencial.
 | `generate-bloco-m` | Gerar Bloco M (Apuração PIS/COFINS com créditos) |
 | `generate-bloco-p` | Gerar Bloco P (Apuração por Regime Tributário) |
 
-### ECD (Escrituração Contábil Digital) — 7 ações
+### ECD (Escrituração Contábil Digital) — 8 ações
 | Ação | Descrição |
 |------|-----------|
 | `generate-ecd` | Gerar ECD completo (Blocos 0, I, J, K, 9) |
@@ -158,8 +202,9 @@ por tabelas com validação, constraints e integridade referencial.
 | `generate-ecd-bloco-k` | Gerar Bloco K (Demonstrações Contábeis: BP e DRE) |
 | `validate-ecd` | Validar arquivo ECD contra regras básicas |
 | `list-ecd-exports` | Listar histórico de exportações ECD |
+| `sign-ecd` | Assinar digitalmente arquivo ECD (certificado A1, RSA-SHA256) |
 
-### ECF (Escrituração Contábil Fiscal) — 8 ações
+### ECF (Escrituração Contábil Fiscal) — 9 ações
 | Ação | Descrição |
 |------|-----------|
 | `generate-ecf` | Gerar ECF completo (todos os blocos fiscais) |
@@ -170,6 +215,7 @@ por tabelas com validação, constraints e integridade referencial.
 | `generate-ecf-bloco-t` | Gerar Bloco T (Distribuição de Lucros) |
 | `validate-ecf` | Validar arquivo ECF contra regras básicas |
 | `list-ecf-exports` | Listar histórico de exportações ECF |
+| `sign-ecf` | Assinar digitalmente arquivo ECF (certificado A1, RSA-SHA256) |
 
 ### Apuração Tributária BR — 15 ações
 | Ação | Descrição |
@@ -218,7 +264,29 @@ por tabelas com validação, constraints e integridade referencial.
 | `generate-reinf-r2020` | Gerar evento R-2020 (Serviços Prestados com Retenção) |
 | `generate-reinf-r2060` | Gerar evento R-2060 (INSS Retido — 11%) |
 
-### Utilitários — 11 ações
+### eSocial (Escrituração Fiscal Digital Trabalhista) — 14 ações
+
+Brazilian unified labor, social security, and tax digital bookkeeping (SPED Trabalhista).
+Replaces GFIP, RAIS, CAGED, SEFIP. XML events sent to eSocial webservice.
+
+| Ação | Descrição |
+|------|-----------|
+| `configure-esocial` | Configurar eSocial para uma empresa (CNPJ, periodicidade, ambiente) |
+| `get-esocial-config` | Consultar configuração eSocial |
+| `generate-s1000` | Gerar evento S-1000 (Informações do Empregador — classificação tributária, FPAS) |
+| `generate-s1005` | Gerar evento S-1005 (Tabela de Estabelecimentos — CNAE, RAT, FAP) |
+| `generate-s1010` | Gerar evento S-1010 (Tabela de Rubricas — verbas da folha, INSS, IRRF, FGTS) |
+| `generate-s1020` | Gerar evento S-1020 (Tabela de Horários/Jornadas — carga diária/semanal) |
+| `generate-s2200` | Gerar evento S-2200 (Admissão do Trabalhador — CPF, salário, contrato, FGTS) |
+| `generate-s2205` | Gerar evento S-2205 (Alteração de Dados Cadastrais — salário, cargo) |
+| `generate-s2299` | Gerar evento S-2299 (Desligamento — verbas rescisórias, aviso prévio) |
+| `generate-s2230` | Gerar evento S-2230 (Afastamento Temporário — doença, maternidade) |
+| `generate-s1200` | Gerar evento S-1200 (Remuneração Mensal — folha de pagamento por trabalhador) |
+| `generate-s1299` | Gerar evento S-1299 (Fechamento da Folha — totais INSS/FGTS do período) |
+| `generate-esocial-events` | Gerar todos os eventos periódicos do mês (S-1200 + S-1299) |
+| `list-esocial-exports` | Listar histórico de eventos eSocial gerados |
+
+### Utilitários — 13 ações
 | Ação | Descrição |
 |------|-----------|
 | `br-status` | Status do módulo de localização BR |
@@ -230,8 +298,24 @@ por tabelas com validação, constraints e integridade referencial.
 | `register-repetro-equipment` | Registrar equipamento sob regime REPETRO |
 | `repetro-expiry-report` | Relatório de DIs REPETRO próximas do vencimento |
 | `repetro-inventory` | Inventário de equipamentos sob regime REPETRO |
+| `sign-ecd` | Assinar digitalmente arquivo ECD (certificado A1, RSA-SHA256) |
+| `sign-ecf` | Assinar digitalmente arquivo ECF (certificado A1, RSA-SHA256) |
 
-**Total: 126 ações**
+### Testes Automatizados
+
+Suite de testes unitários com pytest e SQLite em memória cobrindo:
+- Validação de CNPJ/CPF (`_valida_cnpj`, `_valida_cpf`)
+- CRUD de dados fiscais (company_fiscal, customer_fiscal)
+- Geração de chave de acesso NF-e (`_compute_chave_acesso`, `_clean_cnpj`)
+- Catálogos fiscais (CFOP, CST, NCM)
+- Cálculos tributários (ICMS, PIS/COFINS, DIFAL, Simples Nacional)
+
+Para executar:
+```bash
+cd scripts && python3 -m pytest tests/ -v
+```
+
+**Total: 149 ações**
 
 ## Segurança
 
@@ -264,7 +348,7 @@ Ou peça naturalmente: "Instalar módulo de localização brasileira"
 ```
 erpclaw-region-br/
 ├── SKILL.md              ← Este arquivo
-├── init_db.py            ← Schema de tabelas fiscais BR (26 tabelas: nfe, nfse, nfse_config, cfop, cst, ncm, tax_period, tax_apuration, sped_log, difal, nfe_out, company_fiscal, customer_fiscal, item_fiscal, mva_st_config, fecp_config, iss_config, withholding_config, repetro_di, repetro_equipment)
+├── init_db.py            ← Schema de tabelas fiscais BR (30 tabelas: nfe, nfse, nfse_config, cfop, cst, ncm, tax_period, tax_apuration, sped_log, difal, nfe_out, company_fiscal, customer_fiscal, item_fiscal, mva_st_config, fecp_config, iss_config, withholding_config, repetro_di, repetro_equipment, cte_config, cte, drawback_act, drawback_import)
 ├── assets/
 │   └── charts/
 │       └── br_gaap.json  ← Plano de contas brasileiro (225 contas)
@@ -277,6 +361,9 @@ erpclaw-region-br/
     ├── nfe_emission.py   ← Orquestrador de emissão NF-e (17 ações + DANFE PDF)
     ├── nfse.py           ← NFS-e: ABRASF RPS, municipal ISS (8 ações)
     ├── nfe_avancada.py   ← NF-e Avançada: manifestação, download, compl., devol., cont., exp., DANFE PDF (7 ações)
+    ├── nfe_validator.py  ← Validação XSD real contra schema oficial da SEFAZ (1 ação)
+    ├── cte.py            ← CT-e: Conhecimento de Transporte Eletrônico (8 ações)
+    ├── drawback.py       ← Drawback/Exportação: Ato Concessório, importações, relatórios (5 ações)
     ├── fiscal_data.py    ← Dados fiscais estruturados (10 ações)
     ├── sped_efd.py       ← Gerador EFD ICMS/IPI (Bloco K completo)
     ├── sped_contrib.py   ← Gerador EFD Contribuições
@@ -288,6 +375,9 @@ erpclaw-region-br/
     ├── dctfweb.py        ← DCTFWeb (débitos federais)
     ├── reinf.py          ← REINF (retenções na fonte)
     └── tests/
-        ├── conftest.py
-        └── test_nfe.py
+        ├── conftest.py         ← Fixtures pytest (DB em memória, company_fiscal)
+        ├── test_fiscal_data.py ← Testes de validação CNPJ/CPF e CRUD fiscal
+        ├── test_fiscal_catalog.py ← Testes de CFOP, CST, NCM
+        ├── test_tax_calc.py    ← Testes de cálculos tributários (ICMS, DIFAL, Simples)
+        └── test_nfe_xml.py     ← Testes de geração de chave de acesso NF-e
 ```

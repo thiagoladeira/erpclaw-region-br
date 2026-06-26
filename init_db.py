@@ -1,13 +1,16 @@
 #!/usr/bin/env python3
 """ERPClaw Region BR schema extension -- Brazilian fiscal tables.
 
-Adds 24 tables: nfe_import, nfe_item, cfop, cst_csosn, ncm, 
+Adds 32 tables: nfe_import, nfe_item, cfop, cst_csosn, ncm, 
 tax_period_br, tax_apuration, sped_export_log, difal_config,
 br_nfe_config, br_nfe_out, br_nfe_out_item, br_nfe_event,
 company_fiscal, customer_fiscal, item_fiscal, mva_st_config,
 fecp_config, iss_config, withholding_config, repetro_di,
 repetro_equipment,
-br_nfse_config, br_nfse (NFS-e — service invoices).
+br_nfse_config, br_nfse (NFS-e — service invoices),
+br_cte_config, br_cte (CT-e — freight transport),
+drawback_act, drawback_import (Drawback regime),
+esocial_config, esocial_event (eSocial labor/social security).
 
 Prerequisite: ERPClaw init_db.py must have run first.
 Run: python3 init_db.py [db_path]
@@ -790,12 +793,172 @@ def create_br_tables(db_path=None):
     conn.execute("CREATE INDEX IF NOT EXISTS idx_repetro_eq_company ON repetro_equipment(company_id)")
 
     # ==================================================================
+    # TABLE 27: br_cte_config — CT-e emission configuration
+    # ==================================================================
+    conn.execute("""
+        CREATE TABLE IF NOT EXISTS br_cte_config (
+            id TEXT PRIMARY KEY,
+            company_id TEXT NOT NULL UNIQUE REFERENCES company(id),
+            ambiente TEXT DEFAULT 'homologacao',
+            uf TEXT NOT NULL,
+            certificado_path TEXT,
+            certificado_password TEXT,
+            serie_default TEXT DEFAULT '1',
+            proximo_numero INTEGER DEFAULT 1,
+            created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+            updated_at TEXT DEFAULT CURRENT_TIMESTAMP
+        )
+    """)
+    tables_created += 1
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_cte_cfg_company ON br_cte_config(company_id)")
+
+    # ==================================================================
+    # TABLE 28: br_cte — Conhecimento de Transporte Eletrônico
+    # ==================================================================
+    conn.execute("""
+        CREATE TABLE IF NOT EXISTS br_cte (
+            id TEXT PRIMARY KEY,
+            chave_acesso TEXT UNIQUE NOT NULL,
+            numero INTEGER NOT NULL,
+            serie TEXT DEFAULT '1',
+            modelo TEXT DEFAULT '57',
+            data_emissao TEXT NOT NULL,
+            remetente_nome TEXT,
+            remetente_cnpj TEXT,
+            destinatario_nome TEXT,
+            destinatario_cnpj TEXT,
+            valor_total_mercadorias TEXT DEFAULT '0.00',
+            valor_frete TEXT DEFAULT '0.00',
+            peso_total TEXT DEFAULT '0.00',
+            qtde_volumes TEXT DEFAULT '0',
+            tomador_servico TEXT DEFAULT 'remetente',
+            delivery_note_id TEXT,
+            xml_cte TEXT,
+            xml_signed TEXT,
+            protocolo TEXT,
+            recibo TEXT,
+            status TEXT DEFAULT 'rascunho'
+                CHECK(status IN ('rascunho','assinado','enviado','autorizado','rejeitado','cancelado')),
+            motivo_status TEXT,
+            ambiente TEXT DEFAULT 'homologacao',
+            company_id TEXT NOT NULL REFERENCES company(id),
+            created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+            updated_at TEXT DEFAULT CURRENT_TIMESTAMP
+        )
+    """)
+    tables_created += 1
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_cte_chave ON br_cte(chave_acesso)")
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_cte_company ON br_cte(company_id)")
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_cte_status ON br_cte(status)")
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_cte_data ON br_cte(data_emissao)")
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_cte_numero ON br_cte(numero)")
+
+    # ==================================================================
+    # TABLE 29: drawback_act — Drawback Ato Concessório
+    # ==================================================================
+    conn.execute("""
+        CREATE TABLE IF NOT EXISTS drawback_act (
+            id TEXT PRIMARY KEY,
+            ac_numero TEXT NOT NULL,
+            ac_data TEXT NOT NULL,
+            ac_vencimento TEXT,
+            modalidade TEXT DEFAULT 'suspensao' CHECK(modalidade IN ('suspensao','isencao','restituicao')),
+            valor_concedido TEXT DEFAULT '0.00',
+            valor_utilizado TEXT DEFAULT '0.00',
+            status TEXT DEFAULT 'ativo' CHECK(status IN ('ativo','encerrado','vencido')),
+            company_id TEXT NOT NULL REFERENCES company(id),
+            created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+            updated_at TEXT DEFAULT CURRENT_TIMESTAMP
+        )
+    """)
+    tables_created += 1
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_drawback_act_ac ON drawback_act(ac_numero)")
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_drawback_act_company ON drawback_act(company_id)")
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_drawback_act_status ON drawback_act(status)")
+
+    # ==================================================================
+    # TABLE 30: drawback_import — Drawback-linked imports
+    # ==================================================================
+    conn.execute("""
+        CREATE TABLE IF NOT EXISTS drawback_import (
+            id TEXT PRIMARY KEY,
+            drawback_act_id TEXT NOT NULL REFERENCES drawback_act(id),
+            nfe_import_id TEXT REFERENCES nfe_import(id),
+            di_numero TEXT,
+            valor_mercadorias TEXT DEFAULT '0.00',
+            valor_impostos_suspensos TEXT DEFAULT '0.00',
+            data_importacao TEXT,
+            company_id TEXT NOT NULL REFERENCES company(id),
+            created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+            updated_at TEXT DEFAULT CURRENT_TIMESTAMP
+        )
+    """)
+    tables_created += 1
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_drawback_imp_act ON drawback_import(drawback_act_id)")
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_drawback_imp_nfe ON drawback_import(nfe_import_id)")
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_drawback_imp_company ON drawback_import(company_id)")
+
+    # ==================================================================
+    # TABLE 31: esocial_config — eSocial company configuration
+    # ==================================================================
+    conn.execute("""
+        CREATE TABLE IF NOT EXISTS esocial_config (
+            id TEXT PRIMARY KEY,
+            company_id TEXT NOT NULL UNIQUE REFERENCES company(id),
+            nr_insc_empregador TEXT NOT NULL,
+            tp_insc INTEGER NOT NULL DEFAULT 1 CHECK(tp_insc IN (1,2)),
+            ind_sit_pj INTEGER DEFAULT 0,
+            ind_dep_fgts INTEGER DEFAULT 0,
+            ide_efr INTEGER DEFAULT 0,
+            ide_adicional INTEGER DEFAULT 0,
+            ide_periodicidade TEXT DEFAULT 'mensal',
+            certificado_path TEXT,
+            ambiente TEXT DEFAULT 'producao-restrita',
+            created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+            updated_at TEXT DEFAULT CURRENT_TIMESTAMP
+        )
+    """)
+    tables_created += 1
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_esocial_cfg_company ON esocial_config(company_id)")
+
+    # ==================================================================
+    # TABLE 32: esocial_event — eSocial event tracking
+    # ==================================================================
+    conn.execute("""
+        CREATE TABLE IF NOT EXISTS esocial_event (
+            id TEXT PRIMARY KEY,
+            event_code TEXT NOT NULL,
+            evento_id TEXT,
+            nr_recibo TEXT,
+            periodo TEXT,
+            employee_id TEXT,
+            xml_evento TEXT,
+            xml_signed TEXT,
+            status TEXT DEFAULT 'rascunho'
+                CHECK(status IN ('rascunho','assinado','enviado','processado','rejeitado','erro')),
+            protocolo TEXT,
+            data_processamento TEXT,
+            mensagem TEXT,
+            company_id TEXT NOT NULL REFERENCES company(id),
+            created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+            updated_at TEXT DEFAULT CURRENT_TIMESTAMP
+        )
+    """)
+    tables_created += 1
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_esocial_event_code ON esocial_event(event_code)")
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_esocial_event_status ON esocial_event(status)")
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_esocial_event_periodo ON esocial_event(periodo)")
+
+    # ==================================================================
     # Seed tabelas de catálogo fiscal (CFOP, CST, NCM)
     # ==================================================================
     _seed_fiscal_catalogs(conn)
 
     # Migration: add 'dctfweb' to sped_export_log CHECK if table already existed
     _migrate_sped_export_log_check(conn)
+
+    # Migration: add 'esocial' to sped_export_log CHECK if table already existed
+    _migrate_sped_export_log_esocial(conn)
 
     # Migration: add manifestação subtypes to br_nfe_event CHECK constraint
     _migrate_nfe_event_check(conn)
@@ -1089,6 +1252,72 @@ def _migrate_nfe_event_check(conn):
         except Exception:
             pass
         print(f"  ℹ br_nfe_event migration skipped: {e}")
+
+
+def _migrate_sped_export_log_esocial(conn):
+    """Add 'esocial' to sped_export_log tipo CHECK constraint.
+
+    SQLite does not support ALTER TABLE ... ALTER CHECK, so we rebuild
+    the table if the constraint is missing the new value.
+    """
+    from uuid import uuid4
+    try:
+        test_id = str(uuid4())
+        conn.execute("""
+            INSERT INTO sped_export_log (id, tipo, ano, mes, total_registros, status, company_id)
+            VALUES (?, 'esocial', 2026, 6, 0, 'gerado', 'test')
+        """, (test_id,))
+        conn.execute("DELETE FROM sped_export_log WHERE id = ?", (test_id,))
+        return  # Constraint already includes 'esocial'
+    except Exception:
+        pass
+
+    try:
+        conn.execute("PRAGMA foreign_keys=OFF")
+        conn.execute("ALTER TABLE sped_export_log RENAME TO sped_export_log_old")
+
+        conn.execute("""
+            CREATE TABLE sped_export_log (
+                id                  TEXT PRIMARY KEY,
+                tipo                TEXT NOT NULL
+                                    CHECK(tipo IN ('efd_icms_ipi','efd_contrib','ecd','ecf','dctfweb','reinf','esocial')),
+                ano                 INTEGER NOT NULL,
+                mes                 INTEGER NOT NULL CHECK(mes BETWEEN 1 AND 12),
+                periodo             TEXT,
+                arquivo_path        TEXT,
+                arquivo_hash        TEXT,
+                tamanho_bytes       INTEGER,
+                total_registros     INTEGER,
+                status              TEXT DEFAULT 'gerado'
+                                    CHECK(status IN ('gerado','validado','assinado','transmitido','processado','rejeitado','erro')),
+                protocolo           TEXT,
+                recibo              TEXT,
+                mensagem_sEFAZ      TEXT,
+                company_id          TEXT NOT NULL,
+                created_at          TEXT DEFAULT CURRENT_TIMESTAMP,
+                updated_at          TEXT DEFAULT CURRENT_TIMESTAMP
+            )
+        """)
+
+        conn.execute("""
+            INSERT INTO sped_export_log
+            SELECT * FROM sped_export_log_old
+        """)
+
+        conn.execute("DROP TABLE sped_export_log_old")
+
+        conn.execute("CREATE INDEX IF NOT EXISTS idx_sped_log_tipo ON sped_export_log(tipo)")
+        conn.execute("CREATE INDEX IF NOT EXISTS idx_sped_log_periodo ON sped_export_log(ano, mes)")
+        conn.execute("CREATE INDEX IF NOT EXISTS idx_sped_log_company ON sped_export_log(company_id)")
+
+        conn.execute("PRAGMA foreign_keys=ON")
+        print("  ✓ sped_export_log migrated: added 'esocial' to tipo constraint")
+    except Exception as e:
+        try:
+            conn.execute("PRAGMA foreign_keys=ON")
+        except Exception:
+            pass
+        print(f"  ℹ sped_export_log esocial migration skipped: {e}")
 
 
 if __name__ == "__main__":

@@ -44,6 +44,10 @@ from nfse import ACTIONS as NFSE_ACTIONS
 from nfe_avancada import ACTIONS as NFE_AVANCADA_ACTIONS
 from ecd import ACTIONS as ECD_ACTIONS
 from ecf import ACTIONS as ECF_ACTIONS
+from esocial import ACTIONS as ESOCIAL_ACTIONS
+from cte import ACTIONS as CTE_ACTIONS
+from drawback import ACTIONS as DRAWBACK_ACTIONS
+from nfe_validator import ACTIONS as NFE_VALIDATOR_ACTIONS
 
 # ---------------------------------------------------------------------------
 SKILL = "erpclaw-region-br"
@@ -64,6 +68,10 @@ ACTIONS.update(NFSE_ACTIONS)
 ACTIONS.update(NFE_AVANCADA_ACTIONS)
 ACTIONS.update(ECD_ACTIONS)
 ACTIONS.update(ECF_ACTIONS)
+ACTIONS.update(ESOCIAL_ACTIONS)
+ACTIONS.update(CTE_ACTIONS)
+ACTIONS.update(DRAWBACK_ACTIONS)
+ACTIONS.update(NFE_VALIDATOR_ACTIONS)
 
 
 def main():
@@ -83,6 +91,7 @@ def main():
     parser.add_argument("--xml-path")
     parser.add_argument("--xml-content")
     parser.add_argument("--nfe-import-id")
+    parser.add_argument("--nfe-out-id")
     parser.add_argument("--chave-acesso")
     parser.add_argument("--supplier-id")
     parser.add_argument("--purchase-order-id")
@@ -130,6 +139,7 @@ def main():
     parser.add_argument("--aliquota-ipi")
 
     # NF-e emission
+    parser.add_argument("--cte-id")
     parser.add_argument("--certificado-path")
     parser.add_argument("--certificado-password")
     parser.add_argument("--csc")
@@ -187,6 +197,7 @@ def main():
     parser.add_argument("--equipamento-descricao")
     parser.add_argument("--data-entrada")
     parser.add_argument("--data-saida")
+    parser.add_argument("--xml-signed")
     parser.add_argument("--dias", type=int)
 
     # ECD/ECF
@@ -196,6 +207,16 @@ def main():
     parser.add_argument("--only-block")
 
     # Fiscal data (note: --cnpj, --regime-isencao, --cst-imposto, --cst-regime already defined above)
+    parser.add_argument("--remetente-nome")
+    parser.add_argument("--remetente-cnpj")
+    parser.add_argument("--destinatario-nome")
+    parser.add_argument("--destinatario-cnpj")
+    parser.add_argument("--valor-total-mercadorias")
+    parser.add_argument("--valor-frete")
+    parser.add_argument("--peso-total")
+    parser.add_argument("--qtde-volumes")
+    parser.add_argument("--tomador-servico")
+    parser.add_argument("--delivery-note-id")
     parser.add_argument("--cpf")
     parser.add_argument("--inscricao-estadual")
     parser.add_argument("--inscricao-municipal")
@@ -238,6 +259,15 @@ def main():
     parser.add_argument("--mva-st")
     parser.add_argument("--reducao-base-icms")
     parser.add_argument("--reducao-base-icms-st")
+
+    # eSocial
+    parser.add_argument("--periodicidade")
+    parser.add_argument("--ind-sit-pj", type=int)
+    parser.add_argument("--ind-dep-fgts", type=int)
+    parser.add_argument("--ide-efr", type=int)
+    parser.add_argument("--ide-adicional", type=int)
+    parser.add_argument("--tp-insc", type=int)
+    parser.add_argument("--employee-id")
 
     # RBAC
     parser.add_argument("--user-confirmed", default="false")
