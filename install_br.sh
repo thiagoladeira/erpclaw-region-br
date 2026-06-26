@@ -10,7 +10,7 @@
 # Pré-requisitos:
 #   - ERPClaw já instalado (clawhub install erpclaw)
 #   - Python 3.10+
-#   - pip install lxml (para parser de NF-e)
+#   - pip install lxml cryptography requests (para NF-e, assinatura digital e SEFAZ)
 # ===========================================================================
 set -euo pipefail
 
@@ -51,6 +51,14 @@ if ! python3 -c "import lxml" 2>/dev/null; then
     echo "   Instalando lxml..."
     pip install lxml --quiet
 fi
+if ! python3 -c "import cryptography" 2>/dev/null; then
+    echo "   Instalando cryptography..."
+    pip install cryptography --quiet
+fi
+if ! python3 -c "import requests" 2>/dev/null; then
+    echo "   Instalando requests..."
+    pip install requests --quiet
+fi
 echo "   ✅ Dependências OK"
 
 # STEP 4: Inicializar schema
@@ -68,15 +76,15 @@ if os.path.exists(registry_path):
         reg = json.load(f)
     if 'erpclaw-region-br' not in reg.get('modules', {}):
         reg['modules']['erpclaw-region-br'] = {
-            'action_count': 45,
+            'action_count': 119,
             'category': 'regional',
-            'description': 'Brazilian tax compliance: ICMS/IPI/PIS/COFINS/ISS, NF-e XML parsing, SPED, REPETRO. 45 actions.',
+            'description': 'Brazilian full fiscal compliance: NF-e in/out, NFS-e, SPED EFD ICMS/IPI & Contribuições, DCTFWeb, REINF, ECD, ECF, REPETRO, ISS, DIFAL, Simples Nacional. 119 actions across 11 domains.',
             'repo': 'thiagoladeira/erpclaw-region-br',
             'source': 'https://github.com/thiagoladeira/erpclaw-region-br',
-            'tags': ['brazil','nfe','sped','icms','repetro'],
+            'tags': ['brazil','nfe','nfse','sped','ecd','ecf','dctfweb','reinf','icms','pis','cofins','iss','ipi','repetro','simples-nacional','difal','lucro-real'],
             'install_type': 'git',
             'requires': ['erpclaw'],
-            'version': '1.0.0'
+            'version': '1.5.0'
         }
         with open(registry_path, 'w') as f:
             json.dump(reg, f, indent=2)

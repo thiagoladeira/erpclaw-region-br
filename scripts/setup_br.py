@@ -46,7 +46,7 @@ def br_status(conn, args):
 
     return ok({
         "module": "erpclaw-region-br",
-        "version": "1.0.0",
+        "version": "1.5.0",
         "company": {
             "name": company[0] if company else "N/A",
             "country": company[1] if company else "N/A",
