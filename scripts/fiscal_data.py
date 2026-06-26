@@ -848,6 +848,324 @@ def migrate_fiscal_data(conn, args):
 
 
 # ═══════════════════════════════════════════════════════════════════════
+# Action: lookup-tipi
+# ═══════════════════════════════════════════════════════════════════════
+
+def _suggest_cst_ipi(capitulo: str, aliq_ipi: str) -> str:
+    """Suggest IPI CST based on chapter and rate."""
+    if aliq_ipi == "0.00":
+        return "55"  # NT (não tributado — alíquota zero)
+    # Chapters 25-27, 84-85, 90 → generally taxed
+    return "50"  # tributado
+
+
+def _suggest_cfop(capitulo: str) -> tuple:
+    """Suggest internal and interstate CFOP based on NCM chapter."""
+    ch = int(capitulo) if capitulo.isdigit() else 0
+    if 84 <= ch <= 85 or 90 <= ch <= 91:
+        return ("5.102", "6.102")  # venda de mercadoria adquirida
+    if 72 <= ch <= 83:
+        return ("5.102", "6.102")  # produtos metalúrgicos
+    if 25 <= ch <= 27:
+        return ("5.101", "6.101")  # produção do estabelecimento
+    if 28 <= ch <= 38:
+        return ("5.102", "6.102")  # produtos químicos
+    return ("5.102", "6.102")
+
+
+def _suggest_cest(ncm_code: str) -> str:
+    """Suggest CEST based on NCM prefix."""
+    prefix = ncm_code[:7].replace(".", "").replace(" ", "")
+    cest_map = {
+        "7318": "10.062.00", "8481": "28.085.00", "8413": "21.072.00",
+        "8414": "21.073.00", "8419": "21.076.00", "8421": "21.078.00",
+        "8501": "05.002.00", "8504": "12.001.00", "8537": "12.021.00",
+        "8544": "12.037.00", "9026": "28.067.00", "9032": "28.072.00",
+        "7304": "10.054.00", "7307": "10.058.00", "7305": "10.055.00",
+        "7225": "10.045.00", "7228": "10.048.00", "4016": "07.019.00",
+    }
+    return cest_map.get(prefix[:4], "")
+
+
+def lookup_tipi(conn, args):
+    """Look up NCM code in TIPI table and return rates + classification hints.
+
+    Args: --ncm-code (e.g. "8481.80.92")
+    Returns: ncm, descricao, aliq_ipi, aliq_ii, capitulo, posicao,
+             cest_sugerido, cst_ipi_sugerido, cfop_saida_sugerido
+    """
+    ncm_code = args.ncm_code
+    if not ncm_code:
+        return err("--ncm-code is required")
+
+    # Clean NCM code
+    clean = "".join(ch for ch in ncm_code if ch.isdigit() or ch == ".")
+
+    # Try exact match
+    row = conn.execute(
+        "SELECT * FROM ncm WHERE codigo = ?",
+        (clean,)
+    ).fetchone()
+
+    # Try prefix search (first 8 chars)
+    if not row:
+        prefix = clean[:8] if len(clean) >= 8 else clean
+        row = conn.execute(
+            "SELECT * FROM ncm WHERE codigo LIKE ? LIMIT 1",
+            (f"{prefix}%",)
+        ).fetchone()
+
+    if not row:
+        return ok({
+            "found": False,
+            "ncm_code": clean,
+            "message": "NCM not found in local TIPI catalog. Add it via add-ncm first, or the rate defaults to 0%.",
+            "defaults": {
+                "aliq_ipi": "0.00", "aliq_ii": "0.00",
+                "cst_ipi_sugerido": "55",
+                "cfop_saida_interna": "5.102",
+                "cfop_saida_interestadual": "6.102",
+            }
+        })
+
+    ncm_data = dict(row)
+    aliq_ipi = ncm_data.get("aliquota_ipi", "0.00") or "0.00"
+    aliq_ii = ncm_data.get("aliquota_ii", "0.00") or "0.00"
+    codigo = ncm_data["codigo"]
+
+    # Extract chapter
+    parts = codigo.replace(".", " ").split()
+    capitulo = parts[0][:2] if parts else "00"
+    posicao = ".".join(parts[:2]) if len(parts) >= 2 else codigo
+
+    cfop_int, cfop_inter = _suggest_cfop(capitulo)
+
+    return ok({
+        "found": True,
+        "ncm": codigo,
+        "descricao": ncm_data.get("descricao", ""),
+        "aliq_ipi": aliq_ipi,
+        "aliq_ii": aliq_ii,
+        "capitulo": capitulo,
+        "posicao": posicao,
+        "cest_sugerido": _suggest_cest(codigo),
+        "cst_ipi_sugerido": _suggest_cst_ipi(capitulo, aliq_ipi),
+        "cfop_saida_interna": cfop_int,
+        "cfop_saida_interestadual": cfop_inter,
+    })
+
+
+# ═══════════════════════════════════════════════════════════════════════
+# Action: resolve-ncm
+# ═══════════════════════════════════════════════════════════════════════
+
+def _strip_accents(text: str) -> str:
+    """Remove accents from text for accent-insensitive search."""
+    import unicodedata
+    nfkd = unicodedata.normalize('NFKD', text)
+    return "".join(ch for ch in nfkd if not unicodedata.combining(ch))
+
+
+def resolve_ncm(conn, args):
+    """Search NCM by partial description or code.
+
+    Args: --search (description or code fragment)
+    Returns: list of matching NCMs
+    """
+    search = args.search
+    if not search:
+        return err("--search is required")
+
+    # Try code search first
+    if any(ch.isdigit() for ch in search):
+        clean = "".join(ch for ch in search if ch.isdigit() or ch == ".")
+        rows = conn.execute(
+            "SELECT codigo, descricao, aliquota_ii, aliquota_ipi FROM ncm "
+            "WHERE codigo LIKE ? ORDER BY codigo LIMIT ?",
+            (f"%{clean}%", args.limit or 20)
+        ).fetchall()
+        if rows:
+            return ok({
+                "search": search,
+                "results": [{
+                    "ncm": r["codigo"],
+                    "descricao": r["descricao"],
+                    "aliq_ipi": r["aliquota_ipi"] or "0.00",
+                    "aliq_ii": r["aliquota_ii"] or "0.00",
+                } for r in rows],
+                "count": len(rows),
+            })
+
+    # Description search (accent-insensitive)
+    search_no_accents = _strip_accents(search.lower())
+    words = search_no_accents.split()
+    conditions = []
+    params = []
+    for w in words[:5]:
+        conditions.append("descricao_no_accent LIKE ?")
+        params.append(f"%{w}%")
+
+    query = (
+        "SELECT codigo, descricao, aliquota_ii, aliquota_ipi FROM ncm WHERE "
+        + " AND ".join(conditions)
+        + " ORDER BY codigo LIMIT ?"
+    )
+    params.append(args.limit or 20)
+
+    rows = conn.execute(query, params).fetchall()
+
+    if not rows:
+        return ok({
+            "search": search,
+            "results": [],
+            "count": 0,
+            "message": "No NCM found. Try a different description or add the NCM via add-ncm.",
+        })
+
+    return ok({
+        "search": search,
+        "results": [{
+            "ncm": r["codigo"],
+            "descricao": r["descricao"],
+            "aliq_ipi": r["aliquota_ipi"] or "0.00",
+            "aliq_ii": r["aliquota_ii"] or "0.00",
+        } for r in rows],
+        "count": len(rows),
+    })
+
+
+# ═══════════════════════════════════════════════════════════════════════
+# Action: auto-classify-item
+# ═══════════════════════════════════════════════════════════════════════
+
+def auto_classify_item(conn, args):
+    """Auto-fill item_fiscal from NCM code using TIPI catalog.
+
+    Args: --item-id, --ncm-code, --company-id
+    Automatically fills: ncm, aliq_ipi, aliq_ii, CSTs, CFOPs, CEST, origem
+    """
+    item_id = args.item_id
+    ncm_code = args.ncm_code
+    company_id = args.company_id
+
+    if not item_id:
+        return err("--item-id is required")
+    if not ncm_code:
+        return err("--ncm-code is required")
+    if not company_id:
+        return err("--company-id is required")
+
+    # Verify item exists
+    item = conn.execute(
+        "SELECT id, item_name, item_type FROM item WHERE id = ?", (item_id,)
+    ).fetchone()
+    if not item:
+        return err(f"Item not found: {item_id}")
+
+    # Look up TIPI
+    clean_ncm = "".join(ch for ch in ncm_code if ch.isdigit() or ch == ".")
+    row = conn.execute(
+        "SELECT * FROM ncm WHERE codigo = ?", (clean_ncm,)
+    ).fetchone()
+
+    if not row:
+        # Try prefix
+        prefix = clean_ncm[:8] if len(clean_ncm) >= 8 else clean_ncm
+        row = conn.execute(
+            "SELECT * FROM ncm WHERE codigo LIKE ? LIMIT 1",
+            (f"{prefix}%",)
+        ).fetchone()
+
+    aliq_ipi = "0.00"
+    aliq_ii = "0.00"
+    cst_ipi = "55"
+    cfop_int = "5.102"
+    cfop_inter = "6.102"
+    cest = ""
+    from_tipi = False
+
+    if row:
+        from_tipi = True
+        ncm_data = dict(row)
+        aliq_ipi = ncm_data.get("aliquota_ipi", "0.00") or "0.00"
+        aliq_ii = ncm_data.get("aliquota_ii", "0.00") or "0.00"
+        codigo = ncm_data["codigo"]
+        parts = codigo.replace(".", " ").split()
+        capitulo = parts[0][:2] if parts else "00"
+        cst_ipi = _suggest_cst_ipi(capitulo, aliq_ipi)
+        cfop_int, cfop_inter = _suggest_cfop(capitulo)
+        cest = _suggest_cest(codigo)
+
+    # Determine ICMS CST — if it's a service (no NCM), ICMS is isento
+    is_service = item["item_type"] == "service"
+    icms_cst = "40" if is_service else "00"  # isento for services, tributado for goods
+    aliq_icms = "0.00" if is_service else "18.00"
+    aliq_iss = args.aliq_iss or "5.00" if is_service else "0.00"
+
+    origem = args.origem or "0"  # nacional
+    now = datetime.now().isoformat()
+
+    # Upsert item_fiscal
+    existing = conn.execute(
+        "SELECT id FROM item_fiscal WHERE item_id = ?", (item_id,)
+    ).fetchone()
+
+    if existing:
+        conn.execute("""
+            UPDATE item_fiscal SET
+                ncm = ?, aliq_ipi = ?, aliq_icms = ?, aliq_iss = ?,
+                icms_cst = ?, ipi_cst = ?, pis_cst = '01', cofins_cst = '01',
+                cfop_saida_interna = ?, cfop_saida_interestadual = ?,
+                origem = ?, cest = ?, updated_at = ?
+            WHERE item_id = ?
+        """, (
+            clean_ncm, aliq_ipi, aliq_icms, aliq_iss,
+            icms_cst, cst_ipi,
+            cfop_int, cfop_inter,
+            origem, cest, now, item_id,
+        ))
+    else:
+        if_id = str(uuid4())
+        conn.execute("""
+            INSERT INTO item_fiscal (
+                id, item_id, ncm, cest, origem,
+                cfop_saida_interna, cfop_saida_interestadual,
+                icms_cst, pis_cst, cofins_cst, ipi_cst,
+                aliq_icms, aliq_icms_st, aliq_pis, aliq_cofins, aliq_ipi, aliq_iss,
+                mva_st, company_id, created_at, updated_at
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """, (
+            if_id, item_id, clean_ncm, cest, origem,
+            cfop_int, cfop_inter,
+            icms_cst, "01", "01", cst_ipi,
+            aliq_icms, "0.00", "1.65", "7.60", aliq_ipi, aliq_iss,
+            "0.00", company_id, now, now,
+        ))
+
+    conn.commit()
+
+    return ok({
+        "item_id": item_id,
+        "item_name": item["item_name"],
+        "ncm": clean_ncm,
+        "from_tipi": from_tipi,
+        "aliq_ipi": aliq_ipi,
+        "aliq_ii": aliq_ii,
+        "aliq_icms": aliq_icms,
+        "aliq_iss": aliq_iss,
+        "icms_cst": icms_cst,
+        "ipi_cst": cst_ipi,
+        "pis_cst": "01",
+        "cofins_cst": "01",
+        "cfop_saida_interna": cfop_int,
+        "cfop_saida_interestadual": cfop_inter,
+        "cest": cest,
+        "origem": origem,
+        "message": f"Item classified successfully" + (" (TIPI lookup)" if from_tipi else " (defaults applied)"),
+    })
+
+
+# ═══════════════════════════════════════════════════════════════════════
 # Action Registry
 # ═══════════════════════════════════════════════════════════════════════
 
@@ -862,4 +1180,7 @@ ACTIONS = {
     "get-item-fiscal": get_item_fiscal,
     "list-item-fiscal": list_item_fiscal,
     "migrate-fiscal-data": migrate_fiscal_data,
+    "lookup-tipi": lookup_tipi,
+    "resolve-ncm": resolve_ncm,
+    "auto-classify-item": auto_classify_item,
 }

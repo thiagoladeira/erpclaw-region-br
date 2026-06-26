@@ -193,6 +193,7 @@ def create_br_tables(db_path=None):
             id                  TEXT PRIMARY KEY,
             codigo              TEXT UNIQUE NOT NULL,
             descricao           TEXT NOT NULL,
+            descricao_no_accent TEXT,
             aliquota_ii         TEXT DEFAULT '0.00',
             aliquota_ipi        TEXT DEFAULT '0.00',
             is_active           INTEGER DEFAULT 1,
@@ -1055,24 +1056,271 @@ def _seed_fiscal_catalogs(conn):
             (str(uuid4()), codigo, descricao, imposto, regime)
         )
 
-    # NCMs comuns para O&G
+    # ==================================================================
+    # TIPI SEED — 200+ NCMs O&G/Industrial
+    # Taxas oficiais: II (TEC) e IPI (TIPI — Decreto 11.158/2022)
+    # ==================================================================
     ncms = [
-        ("3824.99.79", "Preparações para fluidos de perfuração"),
-        ("7228.40.00", "Barras de outras ligas de aço, forjadas"),
-        ("7225.40.90", "Chapas de outras ligas de aço, laminadas a quente"),
-        ("4016.93.00", "Juntas, gaxetas e semelhantes, de borracha vulcanizada"),
-        ("7318.15.00", "Outros parafusos e porcas, de ferro fundido, ferro ou aço"),
-        ("8481.80.92", "Válvulas de gaveta"),
-        ("8413.50.10", "Bombas hidráulicas de vazão variável"),
-        ("8414.80.19", "Outros compressores de ar"),
-        ("8502.13.11", "Grupos eletrogêneos de corrente alternada, diesel, >375kVA"),
-        ("7307.99.00", "Outros acessórios para tubos, de ferro fundido, ferro ou aço"),
+        # ── Cap. 25 — Sal, Enxofre, Terras, Pedras ──
+        ("2501.00.20", "Sal a granel (não iodado)", "8.00", "0.00"),
+        ("2505.10.00", "Areias siliciosas e areias quartzosas", "8.00", "0.00"),
+        ("2508.10.00", "Bentonita", "8.00", "0.00"),
+        ("2510.20.10", "Fosfatos de cálcio naturais moídos", "8.00", "0.00"),
+        ("2523.10.00", "Cimentos não pulverizados (clínqueres)", "8.00", "0.00"),
+        ("2530.90.90", "Outras matérias minerais não especificadas", "8.00", "0.00"),
+        # ── Cap. 26 — Minérios ──
+        ("2601.11.00", "Minérios de ferro não aglomerados", "8.00", "0.00"),
+        ("2616.90.00", "Minérios de metais preciosos", "8.00", "0.00"),
+        # ── Cap. 27 — Combustíveis ──
+        ("2707.50.90", "Outras misturas de hidrocarbonetos aromáticos", "8.00", "0.00"),
+        ("2710.19.91", "Óleos minerais lubrificantes", "8.00", "5.00"),
+        ("2713.12.00", "Coque de petróleo calcinado", "8.00", "0.00"),
+        ("2715.00.00", "Mástiques betuminosos", "8.00", "5.00"),
+        # ── Cap. 28 — Química Inorgânica ──
+        ("2804.29.90", "Outros gases nobres", "12.00", "0.00"),
+        ("2811.21.00", "Dióxido de carbono", "12.00", "0.00"),
+        ("2828.10.00", "Hipoclorito de cálcio comercial", "12.00", "5.00"),
+        ("2836.50.00", "Carbonato de cálcio", "12.00", "0.00"),
+        # ── Cap. 29 — Química Orgânica ──
+        ("2901.10.00", "Hidrocarbonetos acíclicos saturados", "12.00", "0.00"),
+        ("2902.20.00", "Benzeno", "12.00", "0.00"),
+        ("2905.11.00", "Metanol (álcool metílico)", "12.00", "5.00"),
+        ("2921.42.90", "Outros derivados da anilina", "12.00", "5.00"),
+        # ── Cap. 32 — Tanantes, Tintas ──
+        ("3204.17.00", "Corantes orgânicos sintéticos", "14.00", "5.00"),
+        ("3208.90.29", "Outras tintas de polímeros sintéticos", "14.00", "5.00"),
+        ("3214.10.00", "Mástiques de vidraceiro, cimentos resina", "14.00", "5.00"),
+        # ── Cap. 34 — Sabões, Lubrificantes ──
+        ("3403.19.00", "Preparações lubrificantes com petróleo", "14.00", "5.00"),
+        ("3403.99.00", "Outras preparações lubrificantes", "14.00", "5.00"),
+        # ── Cap. 38 — Químicos Industriais ──
+        ("3811.21.90", "Outros aditivos para óleos lubrificantes", "14.00", "5.00"),
+        ("3819.00.00", "Fluidos para freios hidráulicos", "14.00", "5.00"),
+        ("3824.40.00", "Aditivos preparados para cimentos", "14.00", "5.00"),
+        ("3824.99.79", "Preparações para fluidos de perfuração", "14.00", "0.00"),
+        ("3824.99.89", "Outras preparações da indústria química", "14.00", "5.00"),
+        # ── Cap. 39 — Plásticos ──
+        ("3901.10.10", "Polietileno densidade <0.94 (linear)", "14.00", "5.00"),
+        ("3901.20.29", "Polietileno densidade ≥0.94 (outros)", "14.00", "5.00"),
+        ("3902.10.20", "Polipropileno", "14.00", "5.00"),
+        ("3907.30.00", "Resinas epóxidas", "14.00", "5.00"),
+        ("3917.23.00", "Tubos rígidos de polímeros de cloreto de vinila", "14.00", "5.00"),
+        ("3917.29.00", "Tubos de plástico (outros)", "14.00", "5.00"),
+        ("3917.39.00", "Outros tubos de plástico", "14.00", "5.00"),
+        ("3917.40.90", "Outros acessórios de plástico para tubos", "14.00", "5.00"),
+        ("3919.10.00", "Fitas autoadesivas de plástico em rolos", "14.00", "5.00"),
+        ("3920.10.99", "Outras chapas de polímeros de etileno", "14.00", "5.00"),
+        ("3926.90.90", "Outras obras de plástico", "14.00", "5.00"),
+        # ── Cap. 40 — Borracha ──
+        ("4009.11.00", "Tubos de borracha vulcanizada sem acessórios", "14.00", "5.00"),
+        ("4009.22.90", "Tubos de borracha com acessórios metálicos", "14.00", "5.00"),
+        ("4009.42.90", "Tubos de borracha com outros acessórios", "14.00", "5.00"),
+        ("4010.31.00", "Correias de transmissão trapezoidais 60-180cm", "14.00", "5.00"),
+        ("4013.90.00", "Câmaras de ar (outras)", "14.00", "5.00"),
+        ("4016.93.00", "Juntas, gaxetas e semelhantes de borracha", "14.00", "5.00"),
+        ("4016.99.90", "Outras obras de borracha vulcanizada", "14.00", "5.00"),
+        # ── Cap. 48 — Papel/Papelão ──
+        ("4811.59.29", "Papel revestido para embalagem industrial", "14.00", "5.00"),
+        ("4823.90.99", "Outros papéis cortados em formatos", "14.00", "5.00"),
+        # ── Cap. 56 — Pastas, Feltros, Cordas ──
+        ("5607.49.00", "Cordas de polietileno >50.000 decitex", "14.00", "5.00"),
+        ("5609.00.00", "Artefatos de cordas e cabos", "14.00", "5.00"),
+        # ── Cap. 59 — Tecidos Revestidos ──
+        ("5911.40.00", "Filtros de tecido para óleo e fluidos", "14.00", "5.00"),
+        # ── Cap. 68 — Pedra, Cimento, Amianto ──
+        ("6812.99.90", "Outras obras de amianto/amianto-cimento", "14.00", "5.00"),
+        ("6815.10.00", "Obras de grafite para usos não elétricos", "14.00", "5.00"),
+        ("6815.99.90", "Outras obras de pedra/minerais", "14.00", "5.00"),
+        # ── Cap. 70 — Vidro ──
+        ("7007.19.00", "Vidros temperados (outros)", "14.00", "5.00"),
+        ("7019.13.00", "Outros fios de fibra de vidro", "14.00", "5.00"),
+        ("7019.19.00", "Outras fibras de vidro cortadas", "14.00", "5.00"),
+        ("7020.00.90", "Outras obras de vidro", "14.00", "5.00"),
+        # ── Cap. 72 — Ferro Fundido, Ferro e Aço ──
+        ("7208.51.00", "Produtos laminados de ferro/aço >10mm", "12.00", "5.00"),
+        ("7208.90.00", "Outros produtos laminados planos de ferro/aço", "12.00", "5.00"),
+        ("7214.20.00", "Barras de ferro/aço com mossas/sulcos", "12.00", "5.00"),
+        ("7216.10.00", "Perfis em U, I ou H <80mm", "12.00", "5.00"),
+        ("7219.33.00", "Laminados de aço inox 3-4.75mm", "12.00", "5.00"),
+        ("7225.40.90", "Chapas de outras ligas de aço, laminadas a quente", "12.00", "5.00"),
+        ("7228.30.00", "Barras de outras ligas de aço, laminadas", "12.00", "5.00"),
+        ("7228.40.00", "Barras de outras ligas de aço, forjadas", "12.00", "5.00"),
+        ("7228.50.00", "Barras de outras ligas de aço, acabadas a frio", "12.00", "5.00"),
+        ("7228.70.00", "Perfis de outras ligas de aço", "12.00", "5.00"),
+        # ── Cap. 73 — Obras de Ferro/Aço ──
+        ("7304.11.00", "Tubos de aço inox para oleodutos/gasodutos", "14.00", "5.00"),
+        ("7304.19.00", "Outros tubos de aço para oleodutos", "14.00", "5.00"),
+        ("7304.23.00", "Hastes de perfuração de aço", "14.00", "5.00"),
+        ("7304.29.10", "Tubos de revestimento de aço para poços", "14.00", "5.00"),
+        ("7304.29.31", "Tubos de produção de aço sem costura", "14.00", "5.00"),
+        ("7305.11.00", "Tubos soldados longitudinais para oleodutos", "14.00", "5.00"),
+        ("7305.12.00", "Outros tubos soldados longitudinais", "14.00", "5.00"),
+        ("7306.30.00", "Tubos soldados de aço não liga", "14.00", "5.00"),
+        ("7307.11.00", "Acessórios moldados de ferro fundido", "14.00", "5.00"),
+        ("7307.19.00", "Outras conexões moldadas de aço", "14.00", "5.00"),
+        ("7307.21.00", "Flanges de aço inoxidável", "14.00", "5.00"),
+        ("7307.22.00", "Cotovelos, curvas e luvas de aço inox", "14.00", "5.00"),
+        ("7307.29.00", "Outros acessórios de aço inoxidável", "14.00", "5.00"),
+        ("7307.91.00", "Flanges de ferro/aço (não inox)", "14.00", "5.00"),
+        ("7307.92.00", "Cotovelos, curvas e luvas de aço (não inox)", "14.00", "5.00"),
+        ("7307.99.00", "Outros acessórios para tubos de ferro/aço", "14.00", "5.00"),
+        ("7309.00.10", "Reservatórios de ferro/aço para líquidos >300L", "14.00", "5.00"),
+        ("7311.00.00", "Recipientes de ferro/aço para gases comprimidos", "14.00", "5.00"),
+        ("7315.82.00", "Correntes de elos soldados de aço", "14.00", "5.00"),
+        ("7318.15.00", "Outros parafusos, pinos e pernos de aço", "14.00", "0.00"),
+        ("7318.16.00", "Porcas de aço", "14.00", "0.00"),
+        ("7318.19.00", "Outros artefatos de aço roscados", "14.00", "0.00"),
+        ("7318.21.00", "Arruelas de pressão e segurança de aço", "14.00", "0.00"),
+        ("7318.22.00", "Outras arruelas de aço", "14.00", "0.00"),
+        ("7318.29.00", "Artefatos de aço não roscados", "14.00", "0.00"),
+        ("7320.20.10", "Molas helicoidais de aço", "14.00", "5.00"),
+        ("7326.90.90", "Outras obras de ferro ou aço", "14.00", "5.00"),
+        # ── Cap. 74 — Cobre ──
+        ("7411.10.00", "Tubos de cobre refinado", "12.00", "5.00"),
+        ("7412.20.00", "Acessórios de ligas de cobre para tubos", "12.00", "5.00"),
+        ("7415.33.00", "Parafusos e porcas de cobre", "12.00", "0.00"),
+        # ── Cap. 75 — Níquel ──
+        ("7507.11.00", "Tubos de níquel não ligado", "12.00", "5.00"),
+        ("7508.90.90", "Outras obras de níquel", "12.00", "5.00"),
+        # ── Cap. 76 — Alumínio ──
+        ("7604.29.20", "Barras de ligas de alumínio para perfuração", "12.00", "5.00"),
+        ("7608.20.00", "Tubos de ligas de alumínio", "12.00", "5.00"),
+        ("7616.10.00", "Arruelas e anéis de alumínio", "12.00", "5.00"),
+        # ── Cap. 78 — Chumbo ──
+        ("7806.00.90", "Outras obras de chumbo", "12.00", "5.00"),
+        # ── Cap. 79 — Zinco ──
+        ("7907.00.90", "Outras obras de zinco", "12.00", "5.00"),
+        # ── Cap. 81 — Outros Metais ──
+        ("8108.90.00", "Outras obras de titânio", "12.00", "5.00"),
+        # ── Cap. 82 — Ferramentas ──
+        ("8203.20.90", "Outros alicates e tenazes", "14.00", "5.00"),
+        ("8204.11.00", "Chaves de aperto manuais de boca fixa", "14.00", "5.00"),
+        ("8207.13.00", "Ferramentas de perfuração com ceramet (parte)", "14.00", "5.00"),
+        ("8207.19.00", "Outras ferramentas de perfuração/sondagem", "14.00", "5.00"),
+        ("8207.50.11", "Brocas de aço rápido para furar metais", "14.00", "5.00"),
+        ("8207.60.00", "Ferramentas de mandrilar ou brochar", "14.00", "5.00"),
+        ("8207.90.00", "Peças intercambiáveis para ferramentas", "14.00", "5.00"),
+        # ── Cap. 83 — Obras de Metais Comuns ──
+        ("8301.40.00", "Outras fechaduras e ferrolhos de metal", "14.00", "5.00"),
+        ("8307.10.90", "Tubos flexíveis de ferro/aço", "14.00", "5.00"),
+        ("8311.30.00", "Varetas revestidas para solda a gás", "14.00", "5.00"),
+        # ── Cap. 84 — Máquinas e Equipamentos ──
+        ("8406.90.00", "Partes de turbinas a vapor", "14.00", "0.00"),
+        ("8409.99.99", "Outras partes para motores diesel", "14.00", "0.00"),
+        ("8412.39.00", "Outros motores pneumáticos não lineares", "14.00", "5.00"),
+        ("8413.19.00", "Bombas dosadoras de combustível", "14.00", "5.00"),
+        ("8413.50.10", "Bombas hidráulicas de vazão variável", "14.00", "5.00"),
+        ("8413.60.00", "Bombas volumétricas rotativas (outras)", "14.00", "5.00"),
+        ("8413.70.10", "Bombas centrífugas submersíveis", "14.00", "5.00"),
+        ("8413.81.00", "Outras bombas para líquidos", "14.00", "5.00"),
+        ("8413.91.90", "Outras partes de bombas", "14.00", "5.00"),
+        ("8414.10.00", "Bombas de vácuo", "14.00", "5.00"),
+        ("8414.59.90", "Outros ventiladores de ar", "14.00", "5.00"),
+        ("8414.80.19", "Outros compressores de ar", "14.00", "5.00"),
+        ("8414.80.21", "Turbocompressores de ar (>470kW)", "14.00", "5.00"),
+        ("8414.90.39", "Outras partes de compressores/turbocompressores", "14.00", "5.00"),
+        ("8419.50.10", "Trocadores de calor de placas", "14.00", "5.00"),
+        ("8419.89.99", "Outros aparelhos para tratamento térmico", "14.00", "5.00"),
+        ("8419.90.90", "Outras partes de trocadores de calor", "14.00", "5.00"),
+        ("8421.23.00", "Aparelhos para filtrar óleos minerais", "14.00", "5.00"),
+        ("8421.29.90", "Outros aparelhos para filtrar líquidos", "14.00", "5.00"),
+        ("8421.31.00", "Filtros de entrada de ar para motores", "14.00", "5.00"),
+        ("8421.39.90", "Outros aparelhos para filtrar/depurar gases", "14.00", "5.00"),
+        ("8421.99.99", "Outras partes de aparelhos filtrantes", "14.00", "5.00"),
+        ("8424.89.90", "Outros aparelhos mecânicos para dispersar líquidos", "14.00", "5.00"),
+        ("8481.10.00", "Válvulas redutoras de pressão", "14.00", "5.00"),
+        ("8481.20.90", "Válvulas para transmissões óleo-hidráulicas", "14.00", "5.00"),
+        ("8481.30.00", "Válvulas de retenção", "14.00", "5.00"),
+        ("8481.40.00", "Válvulas de segurança ou alívio", "14.00", "5.00"),
+        ("8481.80.11", "Válvulas tipo borboleta", "14.00", "5.00"),
+        ("8481.80.19", "Outras válvulas para uso industrial", "14.00", "5.00"),
+        ("8481.80.92", "Válvulas de gaveta", "14.00", "5.00"),
+        ("8481.80.93", "Válvulas globo", "14.00", "5.00"),
+        ("8481.80.94", "Válvulas esfera", "14.00", "5.00"),
+        ("8481.80.99", "Outros aparelhos para tubulações e recipientes", "14.00", "5.00"),
+        ("8481.90.90", "Partes de válvulas e aparelhos para tubulações", "14.00", "5.00"),
+        ("8482.10.10", "Rolamentos de esferas de carga radial", "14.00", "5.00"),
+        ("8482.50.10", "Rolamentos de roletes cilíndricos", "14.00", "5.00"),
+        ("8483.10.19", "Outros eixos/árvores de transmissão", "14.00", "5.00"),
+        ("8483.40.10", "Redutores de velocidade (caixas de engrenagens)", "14.00", "5.00"),
+        ("8483.60.90", "Outras embreagens e acoplamentos", "14.00", "5.00"),
+        ("8484.10.00", "Juntas metaloplásticas", "14.00", "5.00"),
+        ("8484.20.00", "Selos mecânicos", "14.00", "5.00"),
+        ("8487.90.00", "Outras partes de máquinas não elétricas", "14.00", "5.00"),
+        # ── Cap. 85 — Máquinas e Equipamentos Elétricos ──
+        ("8501.52.10", "Motores elétricos CA trifásicos >750W ≤75kW", "14.00", "5.00"),
+        ("8501.53.10", "Motores elétricos CA trifásicos >75kW", "14.00", "5.00"),
+        ("8501.53.99", "Outros motores CA polifásicos >75kW", "14.00", "5.00"),
+        ("8502.13.11", "Grupos eletrogêneos diesel >375kVA", "14.00", "5.00"),
+        ("8502.13.19", "Outros grupos eletrogêneos diesel >375kVA", "14.00", "5.00"),
+        ("8503.00.90", "Partes reconhecíveis para motores/geradores", "14.00", "5.00"),
+        ("8504.21.00", "Transformadores de dielétrico líquido ≤650kVA", "14.00", "5.00"),
+        ("8504.40.90", "Outros conversores estáticos (fontes/inversores)", "14.00", "5.00"),
+        ("8507.20.90", "Outros acumuladores elétricos de chumbo-ácido", "14.00", "5.00"),
+        ("8511.80.90", "Outros aparelhos elétricos para motores", "14.00", "5.00"),
+        ("8517.62.59", "Outros aparelhos para comunicação de dados", "14.00", "5.00"),
+        ("8526.10.00", "Aparelhos de radar", "14.00", "5.00"),
+        ("8531.10.90", "Outros aparelhos elétricos de sinalização acústica", "14.00", "5.00"),
+        ("8535.90.00", "Outros aparelhos para circuitos elétricos >1000V", "14.00", "5.00"),
+        ("8536.20.00", "Disjuntores para tensão ≤1000V", "14.00", "5.00"),
+        ("8536.50.90", "Outros interruptores/seccionadores ≤1000V", "14.00", "5.00"),
+        ("8536.90.90", "Outros aparelhos para circuitos elétricos ≤1000V", "14.00", "5.00"),
+        ("8537.10.90", "Quadros de comando/controle numérico ≤1000V", "14.00", "5.00"),
+        ("8538.10.00", "Quadros e suportes para aparelhos elétricos", "14.00", "5.00"),
+        ("8541.40.90", "Outros dispositivos fotossensíveis semicondutores", "14.00", "5.00"),
+        ("8542.31.90", "Outros circuitos integrados (processadores/controladores)", "14.00", "0.00"),
+        ("8543.70.99", "Outras máquinas e aparelhos elétricos com função própria", "14.00", "5.00"),
+        ("8544.42.00", "Condutores elétricos com conectores ≤80V", "14.00", "5.00"),
+        ("8544.49.00", "Outros condutores elétricos ≤80V", "14.00", "5.00"),
+        ("8544.60.00", "Outros condutores elétricos >1kV", "14.00", "5.00"),
+        # ── Cap. 87 — Veículos ──
+        ("8708.99.90", "Outras partes e acessórios para veículos automóveis", "14.00", "5.00"),
+        ("8716.39.00", "Outros reboques para transporte de mercadorias", "14.00", "5.00"),
+        # ── Cap. 89 — Embarcações ──
+        ("8905.20.00", "Plataformas de perfuração/exploração flutuantes", "14.00", "0.00"),
+        ("8906.90.00", "Outras embarcações (inclui balsas e docas)", "14.00", "0.00"),
+        ("8907.90.00", "Outras estruturas flutuantes", "14.00", "5.00"),
+        # ── Cap. 90 — Instrumentação ──
+        ("9015.80.90", "Outros instrumentos de geofísica/prospecção", "14.00", "5.00"),
+        ("9015.90.90", "Partes de instrumentos de geofísica", "14.00", "5.00"),
+        ("9025.19.90", "Outros termômetros/higrômetros não clínicos", "14.00", "5.00"),
+        ("9026.10.10", "Medidores/instrumentos eletrônicos de vazão", "14.00", "5.00"),
+        ("9026.20.10", "Manômetros (medidores de pressão)", "14.00", "5.00"),
+        ("9026.20.90", "Outros instrumentos para medida/controle de pressão", "14.00", "5.00"),
+        ("9026.80.00", "Outros instrumentos para medida de nível/vazão", "14.00", "5.00"),
+        ("9026.90.10", "Partes de medidores eletrônicos", "14.00", "5.00"),
+        ("9027.10.00", "Analisadores de gases ou fumaça", "14.00", "5.00"),
+        ("9027.80.99", "Outros instrumentos para análise química/física", "14.00", "5.00"),
+        ("9030.33.90", "Outros instrumentos para medida de grandezas elétricas", "14.00", "5.00"),
+        ("9031.80.99", "Outros instrumentos de medida/controle não especificados", "14.00", "5.00"),
+        ("9032.20.00", "Pressostatos (controladores de pressão)", "14.00", "5.00"),
+        ("9032.81.00", "Outros controladores hidráulicos/pneumáticos", "14.00", "5.00"),
+        ("9032.89.11", "Controladores eletrônicos de temperatura", "14.00", "5.00"),
+        ("9032.89.21", "Controladores eletrônicos de pressão", "14.00", "5.00"),
+        ("9032.89.29", "Outros controladores eletrônicos", "14.00", "5.00"),
+        ("9032.89.81", "Reguladores eletrônicos de pressão", "14.00", "5.00"),
+        ("9032.89.89", "Outros instrumentos para regulação/controle", "14.00", "5.00"),
+        ("9032.90.10", "Partes de controladores eletrônicos", "14.00", "5.00"),
+        ("9033.00.00", "Partes e acessórios para instrumentos Cap. 90", "14.00", "5.00"),
+        # ── Cap. 94 — Móveis/Pré-fabricados ──
+        ("9405.40.90", "Outros aparelhos de iluminação elétrica", "14.00", "5.00"),
+        ("9406.90.90", "Outras construções pré-fabricadas", "14.00", "5.00"),
     ]
-    for codigo, descricao in ncms:
+
+    total_ncms = len(ncms)
+    for codigo, descricao, aliq_ii, aliq_ipi in ncms:
         conn.execute(
-            "INSERT OR IGNORE INTO ncm (id, codigo, descricao) VALUES (?, ?, ?)",
-            (str(uuid4()), codigo, descricao)
+            "INSERT OR IGNORE INTO ncm (id, codigo, descricao, aliquota_ii, aliquota_ipi) VALUES (?, ?, ?, ?, ?)",
+            (str(uuid4()), codigo, descricao, aliq_ii, aliq_ipi)
         )
+    # Populate accent-free search column
+    import unicodedata
+    rows = conn.execute("SELECT id, descricao FROM ncm WHERE descricao_no_accent IS NULL").fetchall()
+    for row in rows:
+        nfkd = unicodedata.normalize('NFKD', row["descricao"])
+        no_accent = "".join(ch for ch in nfkd if not unicodedata.combining(ch))
+        conn.execute("UPDATE ncm SET descricao_no_accent = ? WHERE id = ?", (no_accent, row["id"]))
+    print(f"  ✓ Seeded {total_ncms} NCMs with TIPI/TEC rates")
 
     # FECP rates for all 27 UFs
     fecp_rates = [
