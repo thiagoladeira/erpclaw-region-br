@@ -1,13 +1,13 @@
 ---
 name: erpclaw-region-br
-version: 1.6.0
+version: 1.7.0
 description: >
   Brazilian tax compliance: ICMS/IPI/PIS/COFINS/ISS, NF-e inbound/outbound,
   NFS-e (service invoices), NF-e advanced (manifestação, complementar, devolução,
   contingência, exportação), CT-e (freight transport), Drawback/Exportação,
   DANFE PDF, SPED EFD ICMS/IPI, SPED EFD Contribuições, ECD, ECF, DIFAL,
-  Simples Nacional, REPETRO, REINF, DCTFWeb.
-  135 actions across 13 domains.
+  Simples Nacional, REPETRO, REINF, DCTFWeb, eSocial (labor/social security).
+  149 actions across 14 domains.
 author: Morpheus / Thiago Ladeira
 source: https://github.com/avansaber/erpclaw-addons
 tier: 3
@@ -15,7 +15,7 @@ category: regional
 requires: [erpclaw]
 database: ~/.openclaw/erpclaw/data.sqlite
 user-invocable: true
-tags: [brazil, brasil, icms, ipi, pis, cofins, iss, nfe, nf-e, sped, efd, ecd, ecf, difal, simples-nacional, repetro, reinf, dctfweb, xml, danfe, cfop, cst, csosn, ncm, lucro-real, lucro-presumido]
+tags: [brazil, brasil, icms, ipi, pis, cofins, iss, nfe, nf-e, sped, efd, ecd, ecf, difal, simples-nacional, repetro, reinf, dctfweb, esocial, xml, danfe, cfop, cst, csosn, ncm, lucro-real, lucro-presumido]
 scripts:
   - scripts/db_query.py
   - scripts/nfe_xml_gen.py
@@ -36,6 +36,7 @@ scripts:
   - scripts/setup_br.py
   - scripts/dctfweb.py
   - scripts/reinf.py
+  - scripts/esocial.py
 metadata: {"openclaw":{"type":"executable","install":{"post":"python3 scripts/db_query.py --action br-status"},"requires":{"bins":["python3"],"env":[],"optionalEnv":["ERPCLAW_DB_PATH"]},"os":["darwin","linux"]}}
 ---
 

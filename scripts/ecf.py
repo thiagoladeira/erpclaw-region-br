@@ -25,6 +25,7 @@ Actions:
   generate-ecf-bloco-t      — Profit distribution
   validate-ecf              — Basic validation
   list-ecf-exports          — List ECF generations
+  sign-ecf                  — Digital sign ECF with A1 certificate
 """
 import sys
 import os
@@ -1146,6 +1147,108 @@ def list_ecf_exports(conn, args):
     })
 
 
+# ── Digital Signing ──────────────────────────────────────────────────
+
+def _get_cert_config(conn, company_id):
+    """Get certificate path and decrypted password from company config."""
+    import base64
+    cfg = conn.execute(
+        "SELECT certificado_path, certificado_password FROM br_nfe_config WHERE company_id = ?",
+        (company_id,)
+    ).fetchone()
+    if not cfg:
+        return "", ""
+    cert_path = cfg[0] or ""
+    cert_pass = cfg[1] or ""
+    try:
+        cert_pass = base64.b64decode(cert_pass.encode("ascii")).decode("utf-8")
+    except Exception:
+        pass
+    return cert_path, cert_pass
+
+
+def sign_ecf(conn, args):
+    """Sign ECF TXT file with e-CNPJ digital certificate (A1).
+
+    Args: --sped-export-id, --certificado-path (optional, uses company config)
+
+    The ECF signing process:
+    1. Read the generated TXT file
+    2. Compute SHA-256 hash of the full file content
+    3. Sign the hash with the A1 certificate's private key (RSA-SHA256)
+    4. Store signature in sped_export_log
+    5. Update status to 'assinado'
+    """
+    import base64
+    import hashlib
+    from cryptography.hazmat.primitives import hashes
+    from cryptography.hazmat.primitives.asymmetric import padding
+    from nfe_signer import _load_certificate, HAS_CRYPTO
+
+    sped_id = args.sped_export_id
+    if not sped_id:
+        return err("--sped-export-id is required")
+
+    row = conn.execute(
+        "SELECT * FROM sped_export_log WHERE id = ?", (sped_id,)
+    ).fetchone()
+    if not row:
+        return err(f"SPED export not found: {sped_id}")
+
+    sped = dict(row)
+    if sped['status'] not in ('gerado', 'validado'):
+        return err(
+            f"SPED must be 'gerado' or 'validado', current: {sped['status']}"
+        )
+
+    arquivo_path = sped.get('arquivo_path')
+    if not arquivo_path or not os.path.isfile(arquivo_path):
+        return err(f"File not found: {arquivo_path}")
+
+    # Get certificate from company config
+    cert_path, cert_pass = _get_cert_config(conn, sped['company_id'])
+    if not cert_path:
+        return err("Certificate not configured")
+
+    if not HAS_CRYPTO:
+        return err("cryptography not installed. pip install cryptography")
+
+    # Load certificate and private key
+    private_key, certificate = _load_certificate(cert_path, cert_pass)
+
+    # Hash the file
+    with open(arquivo_path, 'rb') as f:
+        file_content = f.read()
+
+    file_hash = hashlib.sha256(file_content).digest()
+
+    # Sign with RSA-SHA256 (PSS padding)
+    signature = private_key.sign(
+        file_hash,
+        padding.PSS(
+            mgf=padding.MGF1(hashes.SHA256()),
+            salt_length=padding.PSS.MAX_LENGTH
+        ),
+        hashes.SHA256()
+    )
+
+    assinatura_b64 = base64.b64encode(signature).decode('ascii')
+
+    now = datetime.now().isoformat()
+    conn.execute(
+        "UPDATE sped_export_log SET status = 'assinado', protocolo = ?, updated_at = ? WHERE id = ?",
+        (assinatura_b64, now, sped_id)
+    )
+    conn.commit()
+
+    return ok({
+        "sped_export_id": sped_id,
+        "status": "assinado",
+        "hash_sha256": hashlib.sha256(file_content).hexdigest(),
+        "message": "ECF file signed successfully"
+    })
+
+
 ACTIONS = {
     "generate-ecf": generate_ecf,
     "generate-ecf-bloco-0": generate_ecf_bloco_0,
@@ -1155,4 +1258,5 @@ ACTIONS = {
     "generate-ecf-bloco-t": generate_ecf_bloco_t,
     "validate-ecf": validate_ecf,
     "list-ecf-exports": list_ecf_exports,
+    "sign-ecf": sign_ecf,
 }

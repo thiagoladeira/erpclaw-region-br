@@ -961,7 +961,8 @@ def calculate_simples_nacional(conn, args):
     # Cap effective rate at nominal rate
     aliq_efetiva = min(aliq_efetiva, bracket_aliq)
 
-    # ── DAS value ──\n    das_valor = receita_mes * (aliq_efetiva / Decimal("100"))
+    # ── DAS value ──
+    das_valor = receita_mes * (aliq_efetiva / Decimal("100"))
 
     # ── Breakdown by tax ──
     breakdown = SIMPLES_BREAKDOWN[annex_key]

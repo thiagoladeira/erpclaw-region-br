@@ -326,4 +326,25 @@ def validate_certificate(pfx_path: str, pfx_password: str) -> dict:
 
 # ── ACTIONS ────────────────────────────────────────────────────────────
 
+# ── Shared Certificate Loading (public API) ──────────────────────────
+
+def _load_certificate(pfx_path: str, password: str):
+    """Load private key and certificate from PKCS#12 file.
+
+    Returns (private_key, certificate).
+    Used by ecd.py, ecf.py, and nfse.py for SPED digital signing.
+    """
+    from cryptography.hazmat.primitives.serialization import pkcs12
+
+    with open(pfx_path, 'rb') as f:
+        pfx_data = f.read()
+
+    private_key, certificate, _ = pkcs12.load_key_and_certificates(
+        pfx_data,
+        password.encode() if password else b"",
+        backend=default_backend()
+    )
+    return private_key, certificate
+
+
 ACTIONS: dict = {}
